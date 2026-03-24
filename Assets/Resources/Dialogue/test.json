@@ -1,0 +1,65 @@
+{
+    "DialogueName": "测试对话",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 1,
+            "dialogueText": "你好，冒险者！",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": "Wave"
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "你好，守卫！我能进入城堡吗？",
+            "nextNodeIndex": 2,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 2,
+            "actorId": 1,
+            "dialogueText": "这取决于你的选择...",
+            "nextNodeIndex": 3,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 3,
+            "actorId": 0,
+            "dialogueText": "",
+            "nextNodeIndex": -1,
+            "isChoiceNode": true,
+            "animationTrigger": "",
+            "choices": [
+                {
+                    "choiceText": "我有通行证",
+                    "targetNodeIndex": 4,
+                    "conditions": []
+                },
+                {
+                    "choiceText": "让我过去！",
+                    "targetNodeIndex": 5,
+                    "conditions": []
+                }
+            ]
+        },
+        {
+            "nodeId": 4,
+            "actorId": 1,
+            "dialogueText": "好的，请进！",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 5,
+            "actorId": 1,
+            "dialogueText": "你不能进入！",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

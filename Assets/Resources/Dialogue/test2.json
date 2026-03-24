@@ -1,0 +1,81 @@
+{
+    "DialogueName": "与普通NPC的对话",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 3,
+            "dialogueText": "嘿，旅行者，今天天气真不错。",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "确实是个好天气。有什么新鲜事吗？",
+            "nextNodeIndex": 2,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 2,
+            "actorId": 3,
+            "dialogueText": "说到这个，我刚好有个小麻烦。我需要一些材料，但不知道该先收集哪种。",
+            "nextNodeIndex": 3,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 3,
+            "actorId": 0,
+            "dialogueText": "",
+            "nextNodeIndex": -1,
+            "isChoiceNode": true,
+            "animationTrigger": "",
+            "choices": [
+                {
+                    "choiceText": "建议先去收集木材",
+                    "targetNodeIndex": 4,
+                    "conditions": []
+                },
+                {
+                    "choiceText": "建议先去收集矿石",
+                    "targetNodeIndex": 5,
+                    "conditions": []
+                }
+            ]
+        },
+        {
+            "nodeId": 4,
+            "actorId": 3,
+            "dialogueText": "木材？嗯，有道理。东边的森林里应该有不少。",
+            "nextNodeIndex": 6,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 5,
+            "actorId": 3,
+            "dialogueText": "矿石？这个建议不错，北边的矿洞入口正好开着。",
+            "nextNodeIndex": 6,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 6,
+            "actorId": 0,
+            "dialogueText": "看来你已经决定了。那祝你一切顺利。",
+            "nextNodeIndex": 7,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 7,
+            "actorId": 3,
+            "dialogueText": "谢谢你，热心的朋友。这些材料收集好之后，欢迎再来找我。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

@@ -1,0 +1,90 @@
+# ============ Unity核心文件 ============
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# ============ TextMesh Pro字体文件 ============
+# 忽略所有TextMesh Pro生成的大字体文件
+/[Aa]ssets/TextMesh Pro/Fonts/*.asset
+/[Aa]ssets/TextMesh Pro/Fonts/*.asset.meta
+/[Aa]ssets/TextMesh Pro/Resources/Fonts & Materials/
+/[Aa]ssets/TextMesh Pro/Sprites/*.asset
+/[Aa]ssets/TextMesh Pro/Sprites/*.asset.meta
+*.fontsettings
+*.sdf.asset
+*.sdf.asset.meta
+*.sdf.png
+*.sdf.png.meta
+/Library/TextMeshPro/
+
+# ============ Unity自动生成文件 ============
+*.log
+sysinfo.txt
+*.pidb
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+.utmp/
+
+# ============ 构建产物 ============
+*.apk
+*.aab
+*.unitypackage
+*.unitypackage.meta
+*.app
+*.exe
+*.dmg
+*.xcodeproj
+*.ipa
+*.aab
+
+# ============ 开发环境文件 ============
+.vs/
+.gradle/
+.consulo/
+ExportedObj/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.booproj
+*.svd
+*.opendb
+*.VC.opendb
+
+# ============ 插件/编辑器特定 ============
+/[Aa]ssets/AssetStoreTools*
+/[Aa]ssets/Plugins/Editor/JetBrains*
+crashlytics-build.properties
+
+# ============ Addressable系统 ============
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+/[Pp]ackedAddressables/
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# ============ 大型媒体文件（可选择性启用）============
+# 如果需要版本控制大型媒体文件，使用Git LFS而不是忽略
+# *.fbx
+# *.blend
+# *.psd
+# *.tga
+# *.mp4
+# *.wav
+# *.mp3
+# *.zip
+# *.rar
+# *.7z

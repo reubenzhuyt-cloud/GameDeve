@@ -6,7 +6,8 @@ public class Player : Entity
 {
     [Header("Player Move")]
     public float moveSpeed = 2f;
-
+    [Header("Player Jump")]
+    public float playerJumpForce = 3f;
     [Header("Player UI")]
     [SerializeField] public TextMeshProUGUI interactionUGUI;
 

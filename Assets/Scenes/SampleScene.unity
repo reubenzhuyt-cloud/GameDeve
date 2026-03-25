@@ -320,7 +320,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dialogueFileName:
-  - test2
+  - test2 1
   currentDialogueIndex: 0
 --- !u!4 &357381311
 Transform:

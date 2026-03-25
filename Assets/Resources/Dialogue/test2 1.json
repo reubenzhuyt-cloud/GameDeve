@@ -1,0 +1,81 @@
+{
+  "DialogueName": "新对话",
+  "nodes": [
+    {
+      "nodeId": 0,
+      "actorId": 2,
+      "dialogueText": "原神启动\n",
+      "nextNodeIndex": 1,
+      "isChoiceNode": false,
+      "position": {
+        "x": 100,
+        "y": 150
+      },
+      "choices": null,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 1,
+      "actorId": 1,
+      "dialogueText": "nihao",
+      "nextNodeIndex": 2,
+      "isChoiceNode": false,
+      "position": {
+        "x": 307,
+        "y": 220
+      },
+      "choices": null,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 2,
+      "actorId": 0,
+      "dialogueText": "我需要做出选则",
+      "nextNodeIndex": -1,
+      "isChoiceNode": true,
+      "position": {
+        "x": 520,
+        "y": 285
+      },
+      "choices": [
+        {
+          "choiceText": "万元河南省",
+          "targetNodeIndex": 3,
+          "conditions": []
+        },
+        {
+          "choiceText": "万本帖",
+          "targetNodeIndex": 4,
+          "conditions": []
+        }
+      ],
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 3,
+      "actorId": 1,
+      "dialogueText": "蔡徐坤",
+      "nextNodeIndex": -1,
+      "isChoiceNode": false,
+      "position": {
+        "x": 730,
+        "y": 206
+      },
+      "choices": null,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 4,
+      "actorId": 1,
+      "dialogueText": "",
+      "nextNodeIndex": -1,
+      "isChoiceNode": false,
+      "position": {
+        "x": 776,
+        "y": 443
+      },
+      "choices": null,
+      "animationTrigger": ""
+    }
+  ]
+}

@@ -145,6 +145,19 @@
                 <button class="btn btn-primary" style="width:100%;" onclick="showAddMenu(event)">➕ 添加节点</button>
             </div>
             <div class="panel-section">
+                <div class="panel-section-title" style="margin-bottom:8px;">🎭 角色管理</div>
+                <div class="form-group" style="margin-bottom:8px;">
+                    <label style="font-size:0.75rem;">角色ID</label>
+                    <input type="number" id="actorIdInput" value="0" min="0" style="font-size:0.75rem;" onchange="updateActorId()">
+                </div>
+                <div class="form-group" style="margin-bottom:8px;">
+                    <label style="font-size:0.75rem;">角色类型</label>
+                    <select id="actorTypeSelect" style="font-size:0.75rem;" onchange="document.getElementById('actorIdInput').value=this.value;updateActorId()">
+                    </select>
+                </div>
+                <button class="btn btn-success" style="width:100%;font-size:0.8rem;" onclick="addNewActor()">➕ 添加角色</button>
+            </div>
+            <div class="panel-section">
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="搜索节点..." oninput="filterNodes(this.value)">
                 </div>
@@ -208,7 +221,7 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        let dialogueData = { DialogueName: "新对话", nodes: [] };
+        let dialogueData = { DialogueName: "NewDialogue", nodes: [] };
         let selectedIndex = -1;
         let nodeIdCounter = 0;
         let zoom = 1, panX = 0, panY = 0;
@@ -220,6 +233,12 @@
         let pendingConnection = null;
         let currentFileHandle = null;
         let autoSaveTimer = null;
+        
+        // 角色管理数组
+        let actors = [
+            { id: 0, name: "玩家 (固定)", isFixed: true },
+            { id: 1, name: "NPC (固定)", isFixed: true }
+        ];
         
         const canvas = document.getElementById('canvas');
         const container = document.getElementById('canvasContainer');
@@ -277,6 +296,12 @@
         }
         
         const historyManager = new HistoryManager();
+        
+        // 初始化角色类型下拉框
+        function initActorTypeSelect() {
+            const actorTypeSelect = document.getElementById('actorTypeSelect');
+            actorTypeSelect.innerHTML = actors.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+        }
         
         function scheduleAutoSave() {
             clearTimeout(autoSaveTimer);
@@ -533,16 +558,16 @@
             dialogueData.nodes.forEach(n => { if (n.nodeId >= nodeIdCounter) nodeIdCounter = n.nodeId + 1; });
         }
         
-        function addNode(type, x, y, autoConnect = null) {
+        function addNode(type, x, y, autoConnect = null, actorId = 0) {
             saveHistory();
             const node = {
                 nodeId: nodeIdCounter++,
-                actorId: type === 'start' ? 2 : (type === 'dialogue' ? 1 : 0),
+                actorId: type === 'start' ? 2 : actorId,
                 dialogueText: "",
                 nextNodeIndex: -1,
                 isChoiceNode: type === 'choice',
                 position: { x: x || 100, y: y || 100 },
-                choices: type === 'choice' ? [{ choiceText: "选项1", targetNodeIndex: -1, conditions: [] }] : null,
+                choices: type === 'choice' ? [{ choiceText: "Option1", targetNodeIndex: -1, conditions: [] }] : null,
                 animationTrigger: ""
             };
             dialogueData.nodes.push(node);
@@ -566,6 +591,12 @@
             document.querySelectorAll('.node').forEach((el, i) => el.classList.toggle('selected', i === index));
             document.querySelectorAll('.node-item').forEach((el, i) => el.classList.toggle('selected', i === index));
             renderProperty();
+            
+            if (index >= 0) {
+                const node = dialogueData.nodes[index];
+                document.getElementById('actorIdInput').value = node.actorId;
+                document.getElementById('actorTypeSelect').value = node.actorId;
+            }
         }
         
         function deleteSelectedNode() {
@@ -590,13 +621,26 @@
         function clearAll() {
             if (dialogueData.nodes.length === 0) return;
             if (!confirm('确定要清空所有节点吗？此操作不可撤销。')) return;
-            dialogueData = { DialogueName: "新对话", nodes: [] };
+            dialogueData = { DialogueName: "NewDialogue", nodes: [] };
             nodeIdCounter = 0;
             selectedIndex = -1;
             historyManager.clear();
+            
+            const startNode = {
+                nodeId: nodeIdCounter++,
+                actorId: 2,
+                dialogueText: "",
+                nextNodeIndex: -1,
+                isChoiceNode: false,
+                position: { x: 100, y: 100 },
+                choices: null,
+                animationTrigger: ""
+            };
+            dialogueData.nodes.push(startNode);
+            
             render();
-            renderProperty();
-            showToast('已清空所有节点');
+            selectNode(0);
+            showToast('已清空并保留开始节点');
         }
         
         function copyNode() {
@@ -635,9 +679,12 @@
                 el.style.top = node.position.y + 'px';
                 el.dataset.index = i;
                 
-                let title = node.actorId === 2 ? '开始' : (node.isChoiceNode ? '选择' : (node.actorId === 0 ? '玩家' : 'NPC'));
-                let iconClass = node.isChoiceNode ? 'choice' : (node.actorId === 2 ? 'start' : (node.actorId === 0 ? 'player' : 'npc'));
-                let iconChar = node.isChoiceNode ? '?' : (node.actorId === 2 ? '▶' : (node.actorId === 0 ? '玩' : 'N'));
+                let title = node.actorId === 2 ? '开始' : (node.isChoiceNode ? '选择' : (actors.find(a => a.id === node.actorId) ? actors.find(a => a.id === node.actorId).name : '未知'));
+                let currentActor = actors.find(a => a.id === node.actorId);
+                let isPlayer = node.actorId === 0;
+                let isNpc = node.actorId === 1 || (currentActor && !currentActor.isFixed && node.actorId > 1);
+                let iconClass = node.isChoiceNode ? 'choice' : (node.actorId === 2 ? 'start' : (isPlayer ? 'player' : 'npc'));
+                let iconChar = node.isChoiceNode ? '?' : (node.actorId === 2 ? '▶' : (isPlayer ? '玩' : (isNpc ? 'N' : '?')));
                 
                 let ports = '';
                 let inputPorts = node.actorId === 2 ? '' : `<div class="port" data-i="${i}" data-port="input"><div class="port-dot input"></div><span class="port-label">${node.isChoiceNode ? '入口' : '输入'}</span></div>`;
@@ -646,7 +693,7 @@
                     node.choices.forEach((c, ci) => {
                         outputPorts += `<div class="port" data-i="${i}" data-port="choice" data-ci="${ci}"><span class="port-label">${c.choiceText || '选项'+(ci+1)}</span><div class="port-dot choice"></div></div>`;
                     });
-                } else if (node.actorId !== 3) {
+                } else {
                     outputPorts += `<div class="port" data-i="${i}" data-port="output"><span class="port-label">输出</span><div class="port-dot output"></div></div>`;
                 }
                 
@@ -657,7 +704,7 @@
                         <div class="node-icon ${iconClass}">${iconChar}</div>
                         <div class="node-title">${title} #${node.nodeId}</div>
                     </div>
-                    <div class="node-body">${node.dialogueText || '（空）'}</div>
+                    <div class="node-body">${node.dialogueText || '(Empty)'}</div>
                     <div class="node-ports">${ports}</div>
                 `;
                 fragment.appendChild(el);
@@ -739,8 +786,8 @@
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             let html = '';
             dialogueData.nodes.forEach((n, i) => {
-                const title = n.actorId === 2 ? '开始' : (n.isChoiceNode ? '选择' : (n.actorId === 0 ? '玩家' : 'NPC'));
-                const text = n.dialogueText || '（空）';
+                const title = n.actorId === 2 ? '开始' : (n.isChoiceNode ? '选择' : (actors.find(a => a.id === n.actorId) ? actors.find(a => a.id === n.actorId).name : '未知'));
+                const text = n.dialogueText || '(Empty)';
                 const matches = !searchTerm || title.toLowerCase().includes(searchTerm) || text.toLowerCase().includes(searchTerm) || `#${n.nodeId}`.includes(searchTerm);
                 html += `<div class="node-item ${i === selectedIndex ? 'selected' : ''} ${matches ? '' : 'hidden'}" onclick="selectNode(${i})">
                     <div class="node-item-title">${title} #${n.nodeId}</div>
@@ -761,7 +808,8 @@
                 panel.innerHTML = '<div class="empty-state">选择节点以编辑属性</div>'; 
                 return; 
             }
-            const node = dialogueData.nodes[selectedIndex];
+            const currentIndex = selectedIndex;
+            const node = dialogueData.nodes[currentIndex];
             let choicesHtml = '';
             if (node.isChoiceNode && node.choices) {
                 choicesHtml = node.choices.map((c, i) => `
@@ -791,13 +839,12 @@
             panel.innerHTML = `
                 <div class="form-group"><label>对话名称</label><input type="text" value="${dialogueData.DialogueName}" oninput="dialogueData.DialogueName=this.value;scheduleAutoSave()"></div>
                 <div class="form-group"><label>节点ID</label><input type="text" value="#${node.nodeId}" readonly style="background:#0f3460;"></div>
-                ${node.actorId!==2?`<div class="form-group"><label>角色</label><select onchange="node.actorId=parseInt(this.value);saveHistory();render()">
-                    <option value="0" ${node.actorId===0?'selected':''}>玩家</option>
-                    <option value="1" ${node.actorId===1?'selected':''}>NPC</option>
+                ${node.actorId!==2?`<div class="form-group"><label>角色</label><select onchange="dialogueData.nodes[${currentIndex}].actorId=parseInt(this.value);saveHistory();render();renderProperty();document.getElementById('actorIdInput').value=this.value;document.getElementById('actorTypeSelect').value=this.value;scheduleAutoSave();">
+                    ${actors.map(a => `<option value="${a.id}" ${node.actorId===a.id?'selected':''}>${a.name}</option>`).join('')}
                 </select></div>`:''}
-                <div class="form-group"><label>对话文本</label><textarea oninput="node.dialogueText=this.value;scheduleAutoSave();updateNodeDisplay(${selectedIndex})">${node.dialogueText}</textarea></div>
-                ${node.actorId!==2?`<div class="form-group"><label>动画触发器</label><input type="text" value="${node.animationTrigger||''}" oninput="node.animationTrigger=this.value;scheduleAutoSave()"></div>`:''}
-                ${node.actorId!==2&&!node.isChoiceNode?`<div class="form-group"><label>下一节点</label><select onchange="node.nextNodeIndex=parseInt(this.value);saveHistory();render()">
+                <div class="form-group"><label>对话文本</label><textarea oninput="dialogueData.nodes[${currentIndex}].dialogueText=this.value;scheduleAutoSave();updateNodeDisplay(${currentIndex})">${node.dialogueText}</textarea></div>
+                ${node.actorId!==2?`<div class="form-group"><label>动画触发器</label><input type="text" value="${node.animationTrigger||''}" oninput="dialogueData.nodes[${currentIndex}].animationTrigger=this.value;scheduleAutoSave()"></div>`:''}
+                ${node.actorId!==2&&!node.isChoiceNode?`<div class="form-group"><label>下一节点</label><select onchange="dialogueData.nodes[${currentIndex}].nextNodeIndex=parseInt(this.value);saveHistory();render()">
                     <option value="-1" ${node.nextNodeIndex===-1?'selected':''}>结束</option>
                     ${dialogueData.nodes.filter(n=>n.nodeId!==node.nodeId).map(n=>`<option value="${n.nodeId}" ${node.nextNodeIndex===n.nodeId?'selected':''}>${n.actorId===2?'开始':(n.isChoiceNode?'选择':(n.actorId===0?'玩家':'NPC'))}#${n.nodeId}</option>`).join('')}
                 </select></div>`:''}
@@ -813,7 +860,7 @@
             const node = dialogueData.nodes[selectedIndex];
             node.isChoiceNode = checked;
             if (checked) {
-                node.choices = [{ choiceText: "选项1", targetNodeIndex: -1, conditions: [] }];
+                node.choices = [{ choiceText: "Option1", targetNodeIndex: -1, conditions: [] }];
                 node.nextNodeIndex = -1;
             } else {
                 node.choices = null;
@@ -826,7 +873,7 @@
         function addChoice() {
             const node = dialogueData.nodes[selectedIndex];
             if (!node.choices) node.choices = [];
-            node.choices.push({ choiceText: "选项" + (node.choices.length + 1), targetNodeIndex: -1, conditions: [] });
+            node.choices.push({ choiceText: "Option" + (node.choices.length + 1), targetNodeIndex: -1, conditions: [] });
             saveHistory();
             render();
             renderProperty();
@@ -842,10 +889,61 @@
             }
         }
         
+        function updateActorId() {
+            const actorId = parseInt(document.getElementById('actorIdInput').value) || 0;
+            
+            if (selectedIndex >= 0) {
+                saveHistory();
+                const node = dialogueData.nodes[selectedIndex];
+                node.actorId = actorId;
+                
+                render();
+                renderProperty();
+                scheduleAutoSave();
+                showToast('角色ID已更新');
+            }
+        }
+        
+        function addNewActor() {
+            let maxActorId = 1;
+            actors.forEach(a => {
+                if (a.id > maxActorId) maxActorId = a.id;
+            });
+            const newActorId = maxActorId + 1;
+            
+            actors.push({ id: newActorId, name: "角色 " + newActorId, isFixed: false });
+            
+            // 更新角色类型下拉框
+            const actorTypeSelect = document.getElementById('actorTypeSelect');
+            actorTypeSelect.innerHTML = actors.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+            
+            document.getElementById('actorIdInput').value = newActorId;
+            document.getElementById('actorTypeSelect').value = newActorId;
+            
+            // 更新所有相关的下拉框
+            if (selectedIndex >= 0) {
+                renderProperty();
+            }
+            
+            // 重新渲染所有节点，确保新角色名称能正确显示
+            render();
+            showToast('已添加新角色ID: ' + newActorId);
+        }
+        
         function updateChoiceText(i, v) { 
             const node = dialogueData.nodes[selectedIndex];
             node.choices[i].choiceText = v;
             scheduleAutoSave();
+            
+            const nodeEl = canvas.children[selectedIndex];
+            if (nodeEl) {
+                const portLabel = nodeEl.querySelectorAll('.port[data-port="choice"]')[i];
+                if (portLabel) {
+                    const label = portLabel.querySelector('.port-label');
+                    if (label) label.textContent = v || 'Option' + (i + 1);
+                }
+            }
+            
             renderConnections();
             renderNodeList();
         }
@@ -862,9 +960,10 @@
             e && e.stopPropagation();
             const menu = document.getElementById('contextMenu');
             menu.innerHTML = `
-                <button onclick="addNodeAtCenter('start')">🟡 开始节点</button>
-                <button onclick="addNodeAtCenter('dialogue')">🔵 对话节点</button>
-                <button onclick="addNodeAtCenter('choice')">🟣 选择节点</button>
+                <button onclick="addNode('start', null, null, null, 2)">🟡 开始节点</button>
+                <button onclick="addNode('dialogue', null, null, null, 0)">🔵 玩家节点</button>
+                <button onclick="addNode('dialogue', null, null, null, 1)">🔴 NPC节点</button>
+                <button onclick="addNode('choice', null, null, null, 0)">🟣 选择节点</button>
             `;
             const rect = container.getBoundingClientRect();
             menu.style.left = Math.min(e ? e.clientX : rect.left + rect.width/2, window.innerWidth - 180) + 'px';
@@ -872,9 +971,9 @@
             menu.classList.add('show');
         }
         
-        function addNodeAtCenter(type) {
+        function addNodeAtCenter(type, actorId = 0) {
             const rect = container.getBoundingClientRect();
-            addNode(type, (rect.width/2 - panX)/zoom - 90, (rect.height/2 - panY)/zoom - 40);
+            addNode(type, (rect.width/2 - panX)/zoom - 90, (rect.height/2 - panY)/zoom - 40, null, actorId);
             hideMenu();
         }
         
@@ -982,7 +1081,7 @@
             
             const bodyEl = nodeEl.querySelector('.node-body');
             if (bodyEl) {
-                bodyEl.textContent = node.dialogueText || '（空）';
+                bodyEl.textContent = node.dialogueText || '(Empty)';
             }
             
             renderNodeList();
@@ -1203,6 +1302,7 @@
         });
         
         function init() {
+            initActorTypeSelect();
             const cached = loadFromLocalStorage();
             if (cached && cached.nodes && cached.nodes.length > 0) {
                 dialogueData = cached;

@@ -17,6 +17,7 @@ public class Player : Entity
     public PlayerIdleState idleState { get; private set; }
     public PlayerMoveState moveState { get; private set; }
     public PlayerChatState chatState { get; private set; }
+    public PlayerJumpState jumpState { get; private set; }
     public override void Awake()
     {
         base.Awake();

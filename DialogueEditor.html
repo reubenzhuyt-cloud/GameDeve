@@ -281,9 +281,30 @@
         function scheduleAutoSave() {
             clearTimeout(autoSaveTimer);
             document.getElementById('saveStatus').textContent = '待保存...';
+            saveToLocalStorage();
             autoSaveTimer = setTimeout(() => {
                 autoSave();
             }, 2000);
+        }
+        
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('dialogueEditor_cache', JSON.stringify(dialogueData));
+            } catch (e) {
+                console.error('缓存保存失败:', e);
+            }
+        }
+        
+        function loadFromLocalStorage() {
+            try {
+                const data = localStorage.getItem('dialogueEditor_cache');
+                if (data) {
+                    return JSON.parse(data);
+                }
+            } catch (e) {
+                console.error('缓存加载失败:', e);
+            }
+            return null;
         }
         
         async function autoSave() {
@@ -750,7 +771,7 @@
                             <button class="btn btn-danger" style="padding:4px 10px;font-size:0.75rem;" onclick="removeChoice(${i})">删除</button>
                         </div>
                         <label>选项文本</label>
-                        <input type="text" value="${c.choiceText}" onchange="updateChoiceText(${i}, this.value)">
+                        <input type="text" value="${c.choiceText}" oninput="updateChoiceText(${i}, this.value)">
                         <label style="margin-top:8px">目标节点</label>
                         <select onchange="updateChoiceTarget(${i}, this.value)">
                             <option value="-1" ${c.targetNodeIndex===-1?'selected':''}>结束</option>
@@ -768,14 +789,14 @@
                     </div>`;
             }
             panel.innerHTML = `
-                <div class="form-group"><label>对话名称</label><input type="text" value="${dialogueData.DialogueName}" onchange="dialogueData.DialogueName=this.value;saveHistory()"></div>
+                <div class="form-group"><label>对话名称</label><input type="text" value="${dialogueData.DialogueName}" oninput="dialogueData.DialogueName=this.value;scheduleAutoSave()"></div>
                 <div class="form-group"><label>节点ID</label><input type="text" value="#${node.nodeId}" readonly style="background:#0f3460;"></div>
                 ${node.actorId!==2?`<div class="form-group"><label>角色</label><select onchange="node.actorId=parseInt(this.value);saveHistory();render()">
                     <option value="0" ${node.actorId===0?'selected':''}>玩家</option>
                     <option value="1" ${node.actorId===1?'selected':''}>NPC</option>
                 </select></div>`:''}
-                <div class="form-group"><label>对话文本</label><textarea onchange="node.dialogueText=this.value;saveHistory();render()">${node.dialogueText}</textarea></div>
-                ${node.actorId!==2?`<div class="form-group"><label>动画触发器</label><input type="text" value="${node.animationTrigger||''}" onchange="node.animationTrigger=this.value;saveHistory()"></div>`:''}
+                <div class="form-group"><label>对话文本</label><textarea oninput="node.dialogueText=this.value;scheduleAutoSave();updateNodeDisplay(${selectedIndex})">${node.dialogueText}</textarea></div>
+                ${node.actorId!==2?`<div class="form-group"><label>动画触发器</label><input type="text" value="${node.animationTrigger||''}" oninput="node.animationTrigger=this.value;scheduleAutoSave()"></div>`:''}
                 ${node.actorId!==2&&!node.isChoiceNode?`<div class="form-group"><label>下一节点</label><select onchange="node.nextNodeIndex=parseInt(this.value);saveHistory();render()">
                     <option value="-1" ${node.nextNodeIndex===-1?'selected':''}>结束</option>
                     ${dialogueData.nodes.filter(n=>n.nodeId!==node.nodeId).map(n=>`<option value="${n.nodeId}" ${node.nextNodeIndex===n.nodeId?'selected':''}>${n.actorId===2?'开始':(n.isChoiceNode?'选择':(n.actorId===0?'玩家':'NPC'))}#${n.nodeId}</option>`).join('')}
@@ -821,8 +842,21 @@
             }
         }
         
-        function updateChoiceText(i, v) { dialogueData.nodes[selectedIndex].choices[i].choiceText = v; saveHistory(); render(); }
-        function updateChoiceTarget(i, v) { dialogueData.nodes[selectedIndex].choices[i].targetNodeIndex = parseInt(v); saveHistory(); render(); }
+        function updateChoiceText(i, v) { 
+            const node = dialogueData.nodes[selectedIndex];
+            node.choices[i].choiceText = v;
+            scheduleAutoSave();
+            renderConnections();
+            renderNodeList();
+        }
+        
+        function updateChoiceTarget(i, v) { 
+            const node = dialogueData.nodes[selectedIndex];
+            node.choices[i].targetNodeIndex = parseInt(v);
+            saveHistory();
+            render();
+            renderProperty();
+        }
         
         function showAddMenu(e) {
             e && e.stopPropagation();
@@ -939,6 +973,19 @@
         
         function updateStatusBar() {
             document.getElementById('statusNodeCount').textContent = dialogueData.nodes.length;
+        }
+        
+        function updateNodeDisplay(idx) {
+            const node = dialogueData.nodes[idx];
+            const nodeEl = canvas.children[idx];
+            if (!node || !nodeEl) return;
+            
+            const bodyEl = nodeEl.querySelector('.node-body');
+            if (bodyEl) {
+                bodyEl.textContent = node.dialogueText || '（空）';
+            }
+            
+            renderNodeList();
         }
         
         function showToast(message, isError = false) {
@@ -1156,7 +1203,14 @@
         });
         
         function init() {
-            addNode('start', 100, 150);
+            const cached = loadFromLocalStorage();
+            if (cached && cached.nodes && cached.nodes.length > 0) {
+                dialogueData = cached;
+                updateMaxId();
+                showToast('已恢复上次编辑的数据');
+            } else {
+                addNode('start', 100, 150);
+            }
             historyManager.push(dialogueData);
             render();
         }

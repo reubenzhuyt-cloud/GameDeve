@@ -1928,6 +1928,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 2.64
+  iumpForce: 0
+  dashSpeed: 0
+  dashCoolDown: 0
+  dashDuration: 0
   interactionUGUI: {fileID: 1965725012}
   dialogueObj: {fileID: 0}
   XInput: 0
@@ -2357,7 +2361,7 @@ Transform:
   m_GameObject: {fileID: 1485528310}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.502, y: -1.508, z: 0}
+  m_LocalPosition: {x: 1.53, y: -1.52, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

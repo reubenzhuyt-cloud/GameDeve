@@ -1,9 +1,18 @@
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class Entity : MonoBehaviour
 {
     public Animator animator { get; private set; }
     public Rigidbody2D rb { get; private set; }
+
+    [Header("Collision Info")]
+     protected Transform GroundCheck;
+    [SerializeField] protected float GroundCheckDistance;
+    protected LayerMask whatIsGround;
+
+
     public virtual void Awake()
     {
         animator = GetComponentInChildren<Animator>();
@@ -19,5 +28,12 @@ public class Entity : MonoBehaviour
     public virtual void Update()
     {
 
+    }
+
+    public virtual boolIsGroundDetected() => Physics2D.Raycast(GroundCheck.position, Vector2.down, GroundCheckDistance, whatIsGround);
+
+    protected virtual OnDrawGizmos()
+    {
+        Gizmos.DrawLine(GroundCheck.position, new Vector3(GroundCheck.position.x, Position.y - GroundCheckDistance));
     }
 }

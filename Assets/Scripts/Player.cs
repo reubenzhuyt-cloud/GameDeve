@@ -6,7 +6,6 @@ public class Player : Entity
 {
     [Header("Player Move")]
     public float moveSpeed = 2f;
-    public float jumpForce = 50f;
 
     [Header("Player UI")]
     [SerializeField] public TextMeshProUGUI interactionUGUI;
@@ -23,6 +22,8 @@ public class Player : Entity
     public PlayerMoveState moveState { get; private set; }
     public PlayerChatState chatState { get; private set; }
     public PlayerJumpState jumpState { get; private set; }
+    public PlayerAirState airState { get; private set; }
+    public PlayerDashState dashState { get; private set; }
     public override void Awake()
     {
         base.Awake();
@@ -30,7 +31,6 @@ public class Player : Entity
         idleState = new PlayerIdleState(this, stateMachine, "Idle");
         moveState = new PlayerMoveState(this, stateMachine, "Walk");
         chatState = new PlayerChatState(this, stateMachine, "Idle");
-        jumpState = new PlayerJumpState(this, stateMachine, "Jump");
     }
     public override void Start()
     {

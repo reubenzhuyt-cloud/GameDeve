@@ -6,9 +6,14 @@ public class Player : Entity
 {
     [Header("Player Move")]
     public float moveSpeed = 2f;
+    public float jumpForce = 50f;
 
     [Header("Player UI")]
     [SerializeField] public TextMeshProUGUI interactionUGUI;
+    [Header("Check Info")]
+    public Transform GroundCheck;
+    public LayerMask groundLayer;
+    public float groundCheckDistance = 0.5f;
 
     public DialogueObj dialogueObj;
     public float XInput;
@@ -25,6 +30,7 @@ public class Player : Entity
         idleState = new PlayerIdleState(this, stateMachine, "Idle");
         moveState = new PlayerMoveState(this, stateMachine, "Walk");
         chatState = new PlayerChatState(this, stateMachine, "Idle");
+        jumpState = new PlayerJumpState(this, stateMachine, "Jump");
     }
     public override void Start()
     {
@@ -74,7 +80,14 @@ public class Player : Entity
     {
         rb.linearVelocity = new Vector2(velocityX, velocityY);
     }
-
+    public bool JumpInput()
+    {
+        return Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Joystick1Button0);
+    }
+    public bool isGrounded()
+    {
+        return Physics2D.Raycast(GroundCheck.position, Vector2.down, groundCheckDistance, groundLayer);
+    }
     public void ShowInteractionUGUI(bool _show)
     {
         if (dialogueObj != null)
@@ -123,5 +136,8 @@ public class Player : Entity
             dialogueObj = null;
         }
     }
-
+    public void OnDrawGizmos()
+    {
+        Gizmos.DrawLine(GroundCheck.position, GroundCheck.position + Vector3.down * 0.5f);
+    }
 }

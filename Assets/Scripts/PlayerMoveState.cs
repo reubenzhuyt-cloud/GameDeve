@@ -13,7 +13,10 @@ public class PlayerMoveState : PlayerState
     public override void Update()
     {
         base.Update();
-
+        if (player.JumpInput())
+        {
+            stateMachine.ChangeState(player.jumpState);
+        }
         if (player.XInput != 0)
         {
             player.SetVelocity(player.XInput * player.moveSpeed);

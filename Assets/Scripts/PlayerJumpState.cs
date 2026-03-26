@@ -8,6 +8,7 @@ public class PlayerJumpState : PlayerState
     override public void Enter()
     {
         base.Enter();
+        player.rb.AddForce(new Vector2(player.jumpForce, player.jumpForce), ForceMode2D.Impulse);
     }
     override public void Update()
     {

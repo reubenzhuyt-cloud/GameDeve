@@ -19,5 +19,15 @@ public class PlayerAirState : PlayerState
     public override void Update()
     {
         base.Update();
+        if (player.XInput != 0)
+        {
+            player.SetVelocity(player.XInput * player.moveSpeed);
+        }
+
+        player.FlipCheck();
+        if (player.isGrounded())
+        {
+            stateMachine.ChangeState(player.idleState);
+        }
     }
 }

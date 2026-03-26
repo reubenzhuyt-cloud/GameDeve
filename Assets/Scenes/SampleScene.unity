@@ -198,7 +198,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 34
-    OrthographicSize: 20.565586
+    OrthographicSize: 7.8
     NearClipPlane: 0.3
     FarClipPlane: 1000
     Dutch: 0
@@ -1381,15 +1381,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3895716386509364149, guid: 768d712ab7c99e748b1b433f9ed2f069, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.44
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3895716386509364149, guid: 768d712ab7c99e748b1b433f9ed2f069, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.44
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3895716386509364149, guid: 768d712ab7c99e748b1b433f9ed2f069, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.44
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3895716386509364149, guid: 768d712ab7c99e748b1b433f9ed2f069, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1700,7 +1700,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 20.565586
+  orthographic size: 7.8
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -1913,6 +1913,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1595732334}
+  - {fileID: 2002943186}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &543494167
@@ -1927,11 +1928,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00b7b1ec5fe621a4dbc0a1c2e97a4466, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  GroundCheck: {fileID: 2002943186}
+  GroundCheckDistance: 0.54
+  whatIsGround:
+    serializedVersion: 2
+    m_Bits: 524288
   moveSpeed: 2.64
-  iumpForce: 0
-  dashSpeed: 0
-  dashCoolDown: 0
-  dashDuration: 0
+  jumpForce: 8
   interactionUGUI: {fileID: 1965725012}
   dialogueObj: {fileID: 0}
   XInput: 0
@@ -2361,7 +2364,7 @@ Transform:
   m_GameObject: {fileID: 1485528310}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.53, y: -1.52, z: 0}
+  m_LocalPosition: {x: 1.502, y: -1.508, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2726,7 +2729,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1837922506}
   - component: {fileID: 1837922505}
-  m_Layer: 0
+  m_Layer: 19
   m_Name: Grid
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2772,6 +2775,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &2002943185
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2002943186}
+  m_Layer: 0
+  m_Name: GroundCheck
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2002943186
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2002943185}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.07, y: -1.21, z: -0.47465777}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 543494166}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2028705338
 GameObject:
   m_ObjectHideFlags: 0
@@ -2841,7 +2875,7 @@ Canvas:
   m_Enabled: 1
   serializedVersion: 3
   m_RenderMode: 0
-  m_Camera: {fileID: 0}
+  m_Camera: {fileID: 519420031}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1

@@ -137,7 +137,7 @@ public class DialogueSystem : MonoBehaviour
 
         if (!string.IsNullOrEmpty(currentNode.animationTrigger))
         {
-            PlayActorAnimation(currentNode.actorId, currentNode.animationTrigger);
+            //PlayActorAnimation(currentNode.actorId, currentNode.animationTrigger);
         }
 
         if (currentNode.isChoiceNode)

@@ -27,8 +27,7 @@ public class PlayerState : EntityState
         player.XInput = Input.GetAxisRaw("Horizontal");
         stateRuntime -= Time.deltaTime;
 
-        player.animator.SetFloat("yVelocity", player.rb.y);
+        //player.animator.SetFloat("yVelocity", player.rb.linearVelocityY);
 
-        if(Input.GetKeyDown(KeyCode.LeftShift)&&)
     }
 }

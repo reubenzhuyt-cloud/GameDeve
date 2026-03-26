@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PlayerJumpState : PlayerState
+public class PlayerJumpState : PlayerAirState
 {
     public PlayerJumpState(Player player, StateMachine<PlayerState> stateMachine, string animBoolName) : base(player, stateMachine, animBoolName)
     {
@@ -8,7 +8,7 @@ public class PlayerJumpState : PlayerState
     override public void Enter()
     {
         base.Enter();
-        player.rb.AddForce(new Vector2(player.jumpForce, player.jumpForce), ForceMode2D.Impulse);
+        player.SetVelocity(player.rb.linearVelocityX, player.jumpForce);
     }
     override public void Update()
     {

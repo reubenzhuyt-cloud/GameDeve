@@ -16,7 +16,7 @@ public class EntityState
     public virtual void Enter()
     {
         stateTime = 0f;
-        entity.animator.SetBool(animationBoolName, true);
+        // entity.animator.SetBool(animationBoolName, true);
         Debug.Log(entity.name + "Enter " + animationBoolName);
     }
 
@@ -27,7 +27,7 @@ public class EntityState
 
     public virtual void Exit()
     {
-        entity.animator.SetBool(animationBoolName, false);
+        // entity.animator.SetBool(animationBoolName, false);
         Debug.Log(entity.name + " Exit " + animationBoolName);
     }
 }

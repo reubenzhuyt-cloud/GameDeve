@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PlayerMoveState : PlayerState
+public class PlayerMoveState : PlayerIdleState
 {
     public PlayerMoveState(Player player, StateMachine<PlayerState> stateMachine, string animationBoolName) : base(player, stateMachine, animationBoolName)
     {
@@ -13,10 +13,7 @@ public class PlayerMoveState : PlayerState
     public override void Update()
     {
         base.Update();
-        if (player.JumpInput())
-        {
-            stateMachine.ChangeState(player.jumpState);
-        }
+
         if (player.XInput != 0)
         {
             player.SetVelocity(player.XInput * player.moveSpeed);

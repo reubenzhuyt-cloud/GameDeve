@@ -6,13 +6,10 @@ public class Player : Entity
 {
     [Header("Player Move")]
     public float moveSpeed = 2f;
-
+    public float jumpForce = 5f;
     [Header("Player UI")]
     [SerializeField] public TextMeshProUGUI interactionUGUI;
     [Header("Check Info")]
-    public Transform GroundCheck;
-    public LayerMask groundLayer;
-    public float groundCheckDistance = 0.5f;
 
     public DialogueObj dialogueObj;
     public float XInput;
@@ -31,6 +28,8 @@ public class Player : Entity
         idleState = new PlayerIdleState(this, stateMachine, "Idle");
         moveState = new PlayerMoveState(this, stateMachine, "Walk");
         chatState = new PlayerChatState(this, stateMachine, "Idle");
+        jumpState = new PlayerJumpState(this, stateMachine, "Jump");
+        dashState = new PlayerDashState(this, stateMachine, "Dash");
     }
     public override void Start()
     {
@@ -86,7 +85,7 @@ public class Player : Entity
     }
     public bool isGrounded()
     {
-        return Physics2D.Raycast(GroundCheck.position, Vector2.down, groundCheckDistance, groundLayer);
+        return IsGroundDetected();
     }
     public void ShowInteractionUGUI(bool _show)
     {
@@ -118,15 +117,22 @@ public class Player : Entity
 
         }
     }
-    // public void OnTriggerStay2D(Collider2D other)
-    // {
-    //     if (other.CompareTag("CanInteractWith") && !interactionUGUI.gameObject.activeSelf)
-    //     {
-    //         ShowInteractionUGUI(true);
-    //         interactionUGUI.transform.position = other.GetComponent<Transform>().position
-    //         + new Vector3(0, 0.5f, 0);
-    //     }
-    // }
+    public void JumpControl()
+    {
+        if (JumpInput() && isGrounded())
+        {
+            stateMachine.ChangeState(jumpState);
+        }
+    }
+    public void OnTriggerStay2D(Collider2D other)
+    {
+        if (other.CompareTag("CanInteractWith") && !interactionUGUI.gameObject.activeSelf)
+        {
+            ShowInteractionUGUI(true);
+            interactionUGUI.transform.position = other.GetComponent<Transform>().position
+            + new Vector3(0, 0.5f, 0);
+        }
+    }
     public void OnTriggerExit2D(Collider2D other)
     {
         Debug.Log("exited the trigger");
@@ -136,8 +142,5 @@ public class Player : Entity
             dialogueObj = null;
         }
     }
-    public void OnDrawGizmos()
-    {
-        Gizmos.DrawLine(GroundCheck.position, GroundCheck.position + Vector3.down * 0.5f);
-    }
+
 }

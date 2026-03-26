@@ -8,9 +8,9 @@ public class Entity : MonoBehaviour
     public Rigidbody2D rb { get; private set; }
 
     [Header("Collision Info")]
-    protected Transform GroundCheck;
+    [SerializeField] protected Transform GroundCheck;
     [SerializeField] protected float GroundCheckDistance;
-    protected LayerMask whatIsGround;
+    [SerializeField] protected LayerMask whatIsGround;
 
 
     public virtual void Awake()

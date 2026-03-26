@@ -8,7 +8,7 @@ public class Entity : MonoBehaviour
     public Rigidbody2D rb { get; private set; }
 
     [Header("Collision Info")]
-     protected Transform GroundCheck;
+    protected Transform GroundCheck;
     [SerializeField] protected float GroundCheckDistance;
     protected LayerMask whatIsGround;
 
@@ -30,10 +30,10 @@ public class Entity : MonoBehaviour
 
     }
 
-    public virtual boolIsGroundDetected() => Physics2D.Raycast(GroundCheck.position, Vector2.down, GroundCheckDistance, whatIsGround);
+    public virtual bool IsGroundDetected() => Physics2D.Raycast(GroundCheck.position, Vector2.down, GroundCheckDistance, whatIsGround);
 
-    protected virtual OnDrawGizmos()
+    protected virtual void OnDrawGizmos()
     {
-        Gizmos.DrawLine(GroundCheck.position, new Vector3(GroundCheck.position.x, Position.y - GroundCheckDistance));
+        Gizmos.DrawLine(GroundCheck.position, new Vector3(GroundCheck.position.x, GroundCheck.position.y - GroundCheckDistance));
     }
 }

@@ -26,6 +26,8 @@ public class PlayerState : EntityState
         base.Update();
         player.XInput = Input.GetAxisRaw("Horizontal");
         stateRuntime -= Time.deltaTime;
+        if (Input.GetKeyDown(KeyCode.Q))
+            stateMachine.ChangeState(player.attackCounter);
 
         //player.animator.SetFloat("yVelocity", player.rb.linearVelocityY);
 

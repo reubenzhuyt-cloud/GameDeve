@@ -11,6 +11,9 @@ public class Player : Entity
     [SerializeField] public TextMeshProUGUI interactionUGUI;
     [Header("Check Info")]
 
+    [Header("Attack Info")]
+    public float CounterDuration;
+
     public DialogueObj dialogueObj;
     public DialogueLogicBase dialogueLogic;
     public NPC currentNPC;
@@ -24,6 +27,7 @@ public class Player : Entity
     public PlayerJumpState jumpState { get; private set; }
     public PlayerAirState airState { get; private set; }
     public PlayerDashState dashState { get; private set; }
+    public PlayerAttackCounterState attackCounter { get; private set; }
     public override void Awake()
     {
         base.Awake();
@@ -63,6 +67,10 @@ public class Player : Entity
         playerFaceRight = playerFaceRight == -1 ? 1 : -1;
         transform.Rotate(0, 180, 0);
     }
+
+    public void SetVelocityZero()=>rb.linearVelocity=new Vector2(0, 0);
+  
+
     public void SetVelocity(float velocityX)
     {
         rb.linearVelocity = new Vector2(velocityX, rb.linearVelocity.y);

@@ -12,6 +12,13 @@ public class Entity : MonoBehaviour
     [SerializeField] protected float GroundCheckDistance;
     [SerializeField] protected LayerMask whatIsGround;
 
+    [Header("Attack Info")]
+    [SerializeField] public Transform attackCheck;
+    [SerializeField] public float attackCheckRadius;
+
+
+
+
 
     public virtual void Awake()
     {
@@ -39,4 +46,7 @@ public class Entity : MonoBehaviour
             Gizmos.DrawLine(GroundCheck.position, new Vector3(GroundCheck.position.x, GroundCheck.position.y - GroundCheckDistance));
         }
     }
+
+   
+
 }

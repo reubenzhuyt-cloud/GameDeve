@@ -9,4 +9,14 @@ public class DialogueObj : MonoBehaviour
     {
         return dialogueFileName[currentDialogueIndex];
     }
+    
+    public void SetDialogueFileNames(List<string> fileNames)
+    {
+        dialogueFileName = fileNames;
+    }
+    
+    public List<string> GetDialogueFileNames()
+    {
+        return dialogueFileName;
+    }
 }

@@ -1,0 +1,78 @@
+{
+    "DialogueName": "孟婆对话-任务进行中",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 1,
+            "dialogueText": "引魂之人，你回来了。有什么发现吗？",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "",
+            "nextNodeIndex": -1,
+            "isChoiceNode": true,
+            "animationTrigger": "",
+            "choices": [
+                {
+                    "choiceText": "我找到了一些游魂",
+                    "targetNodeIndex": 2,
+                    "conditions": []
+                },
+                {
+                    "choiceText": "我还在探索中",
+                    "targetNodeIndex": 4,
+                    "conditions": []
+                },
+                {
+                    "choiceText": "请问引魂灯如何使用？",
+                    "targetNodeIndex": 5,
+                    "conditions": []
+                }
+            ]
+        },
+        {
+            "nodeId": 2,
+            "actorId": 1,
+            "dialogueText": "很好，你的努力没有白费。记住，每个游魂都有自己的故事，耐心倾听他们的心声。",
+            "nextNodeIndex": 3,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 3,
+            "actorId": 1,
+            "dialogueText": "继续前行吧，还有更多的灵魂等待你的指引。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 4,
+            "actorId": 1,
+            "dialogueText": "不要着急，探索这片土地，你会找到需要帮助的灵魂。阴阳界门会带你前往不同的地方。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 5,
+            "actorId": 1,
+            "dialogueText": "引魂灯可以安抚迷失的灵魂，也可以驱散恶灵。靠近游魂时，它会发出柔和的光芒。",
+            "nextNodeIndex": 6,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 6,
+            "actorId": 1,
+            "dialogueText": "用心去感受，你会知道该如何使用它的。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

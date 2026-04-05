@@ -1,0 +1,81 @@
+{
+    "DialogueName": "孟婆对话",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 1,
+            "dialogueText": "年轻人，你终于来了。我在奈何桥畔等候多时了。",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": "Wave"
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "孟婆前辈，您找我有什么事？",
+            "nextNodeIndex": 2,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 2,
+            "actorId": 1,
+            "dialogueText": "这盏引魂灯，是我亲手所制。如今世间游魂四散，需要有人引导他们前往彼岸。",
+            "nextNodeIndex": 3,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 3,
+            "actorId": 1,
+            "dialogueText": "你愿意接受这份使命，成为引魂之人吗？",
+            "nextNodeIndex": 4,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 4,
+            "actorId": 0,
+            "dialogueText": "",
+            "nextNodeIndex": -1,
+            "isChoiceNode": true,
+            "animationTrigger": "",
+            "choices": [
+                {
+                    "choiceText": "我愿意接受这份使命",
+                    "targetNodeIndex": 5,
+                    "conditions": []
+                },
+                {
+                    "choiceText": "请让我再考虑一下",
+                    "targetNodeIndex": 7,
+                    "conditions": []
+                }
+            ]
+        },
+        {
+            "nodeId": 5,
+            "actorId": 1,
+            "dialogueText": "很好，你的心志坚定。这盏灯会指引你找到迷失的灵魂。",
+            "nextNodeIndex": 6,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 6,
+            "actorId": 1,
+            "dialogueText": "去吧，白云浦那边有游魂需要安抚。穿过阴阳界门，你的旅程即将开始。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 7,
+            "actorId": 1,
+            "dialogueText": "无妨，当你准备好的时候，再来找我便是。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+    "DialogueName": "孟婆对话-已接受",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 1,
+            "dialogueText": "很好，你终于做出了决定。这盏引魂灯是我亲手所制，如今交给你了。",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 1,
+            "actorId": 1,
+            "dialogueText": "记住，游魂需要安抚而非驱散。用你的心去感受他们的执念，引导他们走向彼岸。",
+            "nextNodeIndex": 2,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 2,
+            "actorId": 1,
+            "dialogueText": "去吧，白云浦那边有游魂需要你的帮助。穿过阴阳界门，你的旅程即将开始。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

@@ -12,6 +12,9 @@ public class Player : Entity
     [Header("Check Info")]
 
     public DialogueObj dialogueObj;
+    public DialogueLogicBase dialogueLogic;
+    public NPC currentNPC;
+    public InteractableObject currentInteractable;
     public float XInput;
     public int playerFaceRight { get; private set; } = -1;
     public StateMachine<PlayerState> stateMachine { get; private set; }
@@ -113,6 +116,9 @@ public class Player : Entity
         if (other.CompareTag("CanInteractWith"))
         {
             dialogueObj = other.GetComponent<DialogueObj>();
+            dialogueLogic = other.GetComponent<DialogueLogicBase>();
+            currentNPC = other.GetComponent<NPC>();
+            currentInteractable = other.GetComponent<InteractableObject>();
             ShowInteractionUGUI(true);
 
         }
@@ -140,6 +146,9 @@ public class Player : Entity
         {
             ShowInteractionUGUI(false);
             dialogueObj = null;
+            dialogueLogic = null;
+            currentNPC = null;
+            currentInteractable = null;
         }
     }
 

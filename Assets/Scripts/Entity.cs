@@ -34,6 +34,9 @@ public class Entity : MonoBehaviour
 
     protected virtual void OnDrawGizmos()
     {
-        Gizmos.DrawLine(GroundCheck.position, new Vector3(GroundCheck.position.x, GroundCheck.position.y - GroundCheckDistance));
+        if (GroundCheck != null)
+        {
+            Gizmos.DrawLine(GroundCheck.position, new Vector3(GroundCheck.position.x, GroundCheck.position.y - GroundCheckDistance));
+        }
     }
 }

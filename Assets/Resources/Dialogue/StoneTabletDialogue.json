@@ -1,0 +1,21 @@
+{
+    "DialogueName": "神秘石碑对话",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 0,
+            "dialogueText": "一块古老的石碑，上面刻着：\"阴阳两界，一念之间。善念引魂，恶念堕狱。\"",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "石碑散发着淡淡的光芒，似乎蕴含着某种神秘的力量。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

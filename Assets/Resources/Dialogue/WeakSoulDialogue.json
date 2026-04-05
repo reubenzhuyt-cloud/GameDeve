@@ -1,0 +1,73 @@
+{
+    "DialogueName": "虚弱游魂对话",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 2,
+            "dialogueText": "......谢谢你......那温暖的光芒......让我想起了生前......",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "你是谁？为什么会在这里徘徊？",
+            "nextNodeIndex": 2,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 2,
+            "actorId": 2,
+            "dialogueText": "我......我已经不记得自己的名字了......只记得......饥饿......无尽的饥饿......",
+            "nextNodeIndex": 3,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 3,
+            "actorId": 2,
+            "dialogueText": "你的光芒让我感到安宁......我想......我可以安心地离去了......",
+            "nextNodeIndex": 4,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 4,
+            "actorId": 0,
+            "dialogueText": "",
+            "nextNodeIndex": -1,
+            "isChoiceNode": true,
+            "animationTrigger": "",
+            "choices": [
+                {
+                    "choiceText": "愿你在彼岸找到安宁",
+                    "targetNodeIndex": 5,
+                    "conditions": []
+                },
+                {
+                    "choiceText": "我会继续帮助其他游魂",
+                    "targetNodeIndex": 6,
+                    "conditions": []
+                }
+            ]
+        },
+        {
+            "nodeId": 5,
+            "actorId": 2,
+            "dialogueText": "谢谢你......引魂之人......愿你的光芒照亮更多迷失的灵魂......",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 6,
+            "actorId": 2,
+            "dialogueText": "你有一颗善良的心......愿孟婆大人的指引与你同在......",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

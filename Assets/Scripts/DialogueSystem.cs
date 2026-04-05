@@ -68,6 +68,11 @@ public class DialogueSystem : MonoBehaviour
     public UnityEvent<DialogueData> onDialogueChoice = new();
     public UnityEvent<DialogueData> onDialogueChoiceEnd = new();
     public UnityEvent<DialogueNodeData> onDialogueNodeChange = new();
+    public UnityEvent<int, string> onChoiceSelected = new();
+    
+    private int lastChoiceIndex = -1;
+    private string lastChoiceText = "";
+    private DialogueChoiceData lastSelectedChoice = null;
 
     private void Awake()
     {
@@ -217,6 +222,7 @@ public class DialogueSystem : MonoBehaviour
         for (int i = 0; i < availableChoices.Count; i++)
         {
             DialogueChoiceData choice = availableChoices[i];
+            int choiceIndex = i;
 
             GameObject choiceButton = Instantiate(choiceButtonPrefab, choicePanel.transform);
             RectTransform rectTransform = choiceButton.GetComponent<RectTransform>();
@@ -231,7 +237,8 @@ public class DialogueSystem : MonoBehaviour
                 buttonTextUGUI.text = choice.choiceText;
             }
             int targetIndex = choice.targetNodeIndex;
-            button.onClick.AddListener(() => OnChoiceSelected(targetIndex));
+            string choiceText = choice.choiceText;
+            button.onClick.AddListener(() => OnChoiceSelected(choiceIndex, choiceText, targetIndex));
         }
 
         RectTransform panelRect = choicePanel.GetComponent<RectTransform>();
@@ -290,8 +297,11 @@ public class DialogueSystem : MonoBehaviour
         }
     }
 
-    private void OnChoiceSelected(int targetNodeIndex)
+    private void OnChoiceSelected(int choiceIndex, string choiceText, int targetNodeIndex)
     {
+        lastChoiceIndex = choiceIndex;
+        lastChoiceText = choiceText;
+        onChoiceSelected?.Invoke(choiceIndex, choiceText);
         GoToNextNode(targetNodeIndex);
     }
 
@@ -336,6 +346,22 @@ public class DialogueSystem : MonoBehaviour
     public bool IsInDialogue()
     {
         return isInDialogue;
+    }
+    
+    public int GetLastChoiceIndex()
+    {
+        return lastChoiceIndex;
+    }
+    
+    public string GetLastChoiceText()
+    {
+        return lastChoiceText;
+    }
+    
+    public void ClearLastChoice()
+    {
+        lastChoiceIndex = -1;
+        lastChoiceText = "";
     }
 
     private void PlayActorAnimation(int actorId, string triggerName)

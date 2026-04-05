@@ -1,0 +1,13 @@
+{
+    "DialogueName": "路标对话",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 0,
+            "dialogueText": "这是一块破旧的路标，上面依稀可见几个字：\"白云浦 - 向东\"",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

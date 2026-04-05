@@ -1,0 +1,57 @@
+{
+    "DialogueName": "孟婆对话-考虑中",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 1,
+            "dialogueText": "年轻人，你考虑得如何了？",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "",
+            "nextNodeIndex": -1,
+            "isChoiceNode": true,
+            "animationTrigger": "",
+            "choices": [
+                {
+                    "choiceText": "我已经准备好接受这份使命",
+                    "targetNodeIndex": 2,
+                    "conditions": []
+                },
+                {
+                    "choiceText": "请让我再考虑一下",
+                    "targetNodeIndex": 4,
+                    "conditions": []
+                }
+            ]
+        },
+        {
+            "nodeId": 2,
+            "actorId": 1,
+            "dialogueText": "很好，你的心志终于坚定了。这盏引魂灯会指引你找到迷失的灵魂。",
+            "nextNodeIndex": 3,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 3,
+            "actorId": 1,
+            "dialogueText": "去吧，白云浦那边有游魂需要安抚。穿过阴阳界门，你的旅程即将开始。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 4,
+            "actorId": 1,
+            "dialogueText": "无妨，当你准备好的时候，再来找我便是。时间对于彼岸来说，并无意义。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

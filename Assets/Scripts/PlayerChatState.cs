@@ -18,10 +18,34 @@ public class PlayerChatState : PlayerState
         {
             player.stateMachine.ChangeState(player.idleState);
         };
+        
         if (DialogueSystem.instance != null)
         {
             DialogueSystem.instance.onDialogueEnd.AddListener(onDialogueEndAction);
-            DialogueSystem.instance.StartDialogue(player.dialogueObj.currentDialogue());
+            
+            if (player.currentNPC != null)
+            {
+                player.currentNPC.Interact();
+            }
+            else if (player.currentInteractable != null)
+            {
+                player.currentInteractable.Interact();
+            }
+            else if (player.dialogueLogic != null)
+            {
+                DialogueSystem.instance.onChoiceSelected.AddListener(OnChoiceSelected);
+                player.dialogueLogic.OnDialogueStart();
+                DialogueSystem.instance.StartDialogue(player.dialogueLogic.GetDialogueFileName());
+            }
+            else if (player.dialogueObj != null)
+            {
+                DialogueSystem.instance.StartDialogue(player.dialogueObj.currentDialogue());
+            }
+            else
+            {
+                Debug.LogError("No interactable object found");
+                player.stateMachine.ChangeState(player.idleState);
+            }
         }
         else
         {
@@ -29,6 +53,15 @@ public class PlayerChatState : PlayerState
         }
 
     }
+    
+    private void OnChoiceSelected(int choiceIndex, string choiceText)
+    {
+        if (player.dialogueLogic != null)
+        {
+            player.dialogueLogic.OnChoiceSelected(choiceIndex, choiceText);
+        }
+    }
+    
     public override void Update()
     {
 
@@ -39,6 +72,12 @@ public class PlayerChatState : PlayerState
         base.Exit();
 
         DialogueSystem.instance.onDialogueEnd.RemoveListener(onDialogueEndAction);
+        
+        if (player.dialogueLogic != null)
+        {
+            DialogueSystem.instance.onChoiceSelected.RemoveListener(OnChoiceSelected);
+            player.dialogueLogic.OnDialogueEnd();
+        }
 
         onDialogueEndAction = null;
     }

@@ -1,7 +1,7 @@
-using Unity.IO.LowLevel.Unsafe;
+using System.Collections;
 using UnityEngine;
 
-public class Enemy : MonoBehaviour
+public class Enemy : Entity
 {
     [Header("Knockback Info")]
     [SerializeField] protected Vector2 knockbackDirection;
@@ -17,13 +17,11 @@ public class Enemy : MonoBehaviour
     public int facingDir = -1;
     protected bool facingRight = true;
 
-    public Rigidbody2D rb{ get; private set; }
-
     public StateMachine<PlayerState> stateMachine { get; private set; }
 
-    private void Awake()
+    public override void Awake()
     {
-        
+        base.Awake();
     }
 
     private void Start()

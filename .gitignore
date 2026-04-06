@@ -90,3 +90,17 @@ crashlytics-build.properties
 # *.7z
 Assets/TextMesh Pro/Examples & Extras/Resources/Fonts & Materials/6969.asset
 Assets/TextMesh Pro/Examples & Extras/Resources/Fonts & Materials/6969.asset.meta
+
+# ============ 环境变量和敏感信息 ============
+.env
+*.env.local
+
+# ============ 临时文件 ============
+Tools/Temp/
+*.wav
+test_output.wav
+
+# ============ Python 缓存 ============
+__pycache__/
+*.pyc
+*.pyo

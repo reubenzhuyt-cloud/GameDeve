@@ -112,6 +112,13 @@ public class QuestTrackerUI : MonoBehaviour
             DialogueSystem.instance.onDialogueStart.AddListener(OnDialogueStart);
             DialogueSystem.instance.onDialogueEnd.AddListener(OnDialogueEnd);
         }
+        
+        if (QuestManager.instance != null)
+        {
+            QuestManager.instance.onQuestCompleted.AddListener(OnQuestCompleted);
+            QuestManager.instance.onQuestProgressChanged.AddListener(OnQuestProgressChanged);
+            QuestManager.instance.onObjectiveUpdated.AddListener(OnObjectiveUpdated);
+        }
     }
     
     private void UnregisterEvents()
@@ -120,6 +127,13 @@ public class QuestTrackerUI : MonoBehaviour
         {
             DialogueSystem.instance.onDialogueStart.RemoveListener(OnDialogueStart);
             DialogueSystem.instance.onDialogueEnd.RemoveListener(OnDialogueEnd);
+        }
+        
+        if (QuestManager.instance != null)
+        {
+            QuestManager.instance.onQuestCompleted.RemoveListener(OnQuestCompleted);
+            QuestManager.instance.onQuestProgressChanged.RemoveListener(OnQuestProgressChanged);
+            QuestManager.instance.onObjectiveUpdated.RemoveListener(OnObjectiveUpdated);
         }
     }
     
@@ -131,6 +145,53 @@ public class QuestTrackerUI : MonoBehaviour
     private void OnDialogueEnd(DialogueData data)
     {
         UpdateTrackerDisplay();
+    }
+    
+    private void OnQuestCompleted(QuestData completedQuest)
+    {
+        if (trackedQuest != null && trackedQuest.questData == completedQuest)
+        {
+            Debug.Log($"[QuestTrackerUI] Tracked quest completed: {completedQuest.questName}");
+            trackedQuest = null;
+            AutoTrackNextQuest();
+        }
+    }
+    
+    private void OnQuestProgressChanged(QuestData quest)
+    {
+        if (trackedQuest != null && trackedQuest.questData == quest)
+        {
+            Debug.Log($"[QuestTrackerUI] Tracked quest progress changed, refreshing display");
+            UpdateTrackerTexts();
+        }
+    }
+    
+    private void OnObjectiveUpdated(QuestData quest, QuestObjective objective)
+    {
+        if (trackedQuest != null && trackedQuest.questData == quest)
+        {
+            Debug.Log($"[QuestTrackerUI] Tracked quest objective updated: {objective.description}");
+            UpdateTrackerTexts();
+        }
+    }
+    
+    private void AutoTrackNextQuest()
+    {
+        if (QuestManager.instance == null) return;
+        
+        foreach (var activeQuest in QuestManager.instance.ActiveQuestList)
+        {
+            if (activeQuest != null && activeQuest.questData != null)
+            {
+                trackedQuest = activeQuest;
+                Debug.Log($"[QuestTrackerUI] Auto-tracking next quest: {activeQuest.questData.questName}");
+                UpdateTrackerDisplay();
+                return;
+            }
+        }
+        
+        HideTracker();
+        Debug.Log("[QuestTrackerUI] No more quests to track");
     }
     
     public void OnQuestPanelOpened()

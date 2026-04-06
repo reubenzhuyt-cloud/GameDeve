@@ -9,6 +9,11 @@ public class PlayerMoveState : PlayerGroundedState
     public override void Enter()
     {
         base.Enter();
+        
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.PlayStepSound();
+        }
     }
     public override void Update()
     {
@@ -27,5 +32,10 @@ public class PlayerMoveState : PlayerGroundedState
     public override void Exit()
     {
         base.Exit();
+        
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.StopStepSound();
+        }
     }
 }

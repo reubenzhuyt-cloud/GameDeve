@@ -129,7 +129,10 @@ public class QuestPanelUI : MonoBehaviour
     {
         if (Input.GetKeyDown(toggleKey))
         {
-            TogglePanel();
+            if (!UIManager.IsUIBlocked(UIType.QuestPanel))
+            {
+                TogglePanel();
+            }
         }
         
         if (Input.GetKeyDown(KeyCode.Escape) && isOpen)
@@ -152,6 +155,11 @@ public class QuestPanelUI : MonoBehaviour
     
     public void OpenPanel()
     {
+        if (UIManager.IsUIBlocked(UIType.QuestPanel))
+        {
+            return;
+        }
+        
         isOpen = true;
         if (canvasGroup != null)
         {

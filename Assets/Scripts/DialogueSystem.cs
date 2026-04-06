@@ -54,14 +54,19 @@ public class DialogueSystem : MonoBehaviour
     [Header("Animation Settings")]
     [SerializeField] private List<Animator> actorAnimators = new List<Animator>();
     [SerializeField] private float animationTriggerDuration = 0.1f;
+    [Header("Audio Settings")]
+    [SerializeField] private bool enableDialogueAudio = true;
+    [SerializeField] [Range(0f, 1f)] private float dialogueVolume = 1f;
 
     private DialogueData currentDialogue;
     private DialogueNodeData currentNode;
+    private string currentDialogueFileName;
     private bool isInDialogue = false;
     private bool isTyping = false;
     private Coroutine typingCoroutine;
     private Coroutine animationCoroutine;
     private ConditionManager conditionManager;
+    private AudioSource dialogueAudioSource;
 
     public UnityEvent<DialogueData> onDialogueEnd = new();
     public UnityEvent<DialogueData> onDialogueStart = new();
@@ -90,6 +95,19 @@ public class DialogueSystem : MonoBehaviour
             conditionManager = gameObject.AddComponent<ConditionManager>();
         }
         choicePanel.GetComponent<RectTransform>().sizeDelta /= 2f;
+        
+        dialogueAudioSource = gameObject.AddComponent<AudioSource>();
+        dialogueAudioSource.playOnAwake = false;
+        dialogueAudioSource.loop = false;
+        dialogueAudioSource.volume = dialogueVolume;
+
+        if (UIManager.instance != null)
+        {
+            if (dialoguePanel != null)
+                UIManager.instance.RegisterPanel(UIType.DialoguePanel, dialoguePanel, true, true);
+            if (choicePanel != null)
+                UIManager.instance.RegisterPanel(UIType.ChoicePanel, choicePanel, false, true);
+        }
     }
 
     public void StartDialogue(string dialogueFileName)
@@ -100,6 +118,7 @@ public class DialogueSystem : MonoBehaviour
             Debug.LogError($"Dialogue file {dialogueFileName} not found in Resources/Dialogue folder");
             return;
         }
+        currentDialogueFileName = dialogueFileName;
         StartDialogueFromJSON(jsonFile.text);
     }
 
@@ -121,7 +140,11 @@ public class DialogueSystem : MonoBehaviour
         currentNode = dialogue.nodes[0];
         isInDialogue = true;
 
-        dialoguePanel.SetActive(true);
+        if (UIManager.instance != null)
+            UIManager.instance.Show(UIType.DialoguePanel);
+        else if (dialoguePanel != null)
+            dialoguePanel.SetActive(true);
+            
         onDialogueStart.Invoke(currentDialogue);
         ShowCurrentDialogueNode();
     }
@@ -137,6 +160,7 @@ public class DialogueSystem : MonoBehaviour
         dialogueUGUI.text = "";
 
         StopCurrentAnimation();
+        StopDialogueAudio();
 
         onDialogueNodeChange?.Invoke(currentNode);
 
@@ -144,6 +168,8 @@ public class DialogueSystem : MonoBehaviour
         {
             //PlayActorAnimation(currentNode.actorId, currentNode.animationTrigger);
         }
+
+        PlayDialogueAudio(currentNode.nodeId);
 
         if (currentNode.isChoiceNode)
         {
@@ -170,7 +196,10 @@ public class DialogueSystem : MonoBehaviour
         }
         if (choicePanel != null)
         {
-            choicePanel.SetActive(false);
+            if (UIManager.instance != null)
+                UIManager.instance.Hide(UIType.ChoicePanel);
+            else
+                choicePanel.SetActive(false);
         }
         if (typingCoroutine != null)
         {
@@ -195,7 +224,10 @@ public class DialogueSystem : MonoBehaviour
             return;
         }
 
-        choicePanel.SetActive(true);
+        if (UIManager.instance != null)
+            UIManager.instance.Show(UIType.ChoicePanel);
+        else
+            choicePanel.SetActive(true);
 
         RectTransform buttonRect = choiceButtonPrefab.GetComponent<RectTransform>();
         float buttonHeight = buttonRect.rect.height;
@@ -262,7 +294,11 @@ public class DialogueSystem : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
-        choicePanel.SetActive(false);
+        
+        if (UIManager.instance != null)
+            UIManager.instance.Hide(UIType.ChoicePanel);
+        else
+            choicePanel.SetActive(false);
     }
 
     private IEnumerator TypeText(string text)
@@ -308,6 +344,7 @@ public class DialogueSystem : MonoBehaviour
     private void GoToNextNode(int nodeIndex)
     {
         StopCurrentAnimation();
+        StopDialogueAudio();
 
         if (nodeIndex < 0)
         {
@@ -331,9 +368,15 @@ public class DialogueSystem : MonoBehaviour
         isInDialogue = false;
 
         StopCurrentAnimation();
+        StopDialogueAudio();
 
         if (dialoguePanel != null)
-            dialoguePanel.SetActive(false);
+        {
+            if (UIManager.instance != null)
+                UIManager.instance.Hide(UIType.DialoguePanel);
+            else
+                dialoguePanel.SetActive(false);
+        }
 
         ClearChoiceButtons();
 
@@ -341,6 +384,7 @@ public class DialogueSystem : MonoBehaviour
 
         currentDialogue = null;
         currentNode = null;
+        currentDialogueFileName = null;
     }
 
     public bool IsInDialogue()
@@ -397,6 +441,52 @@ public class DialogueSystem : MonoBehaviour
         {
             StopCoroutine(animationCoroutine);
             animationCoroutine = null;
+        }
+    }
+
+    private void PlayDialogueAudio(int nodeId)
+    {
+        if (!enableDialogueAudio || string.IsNullOrEmpty(currentDialogueFileName))
+            return;
+
+        string audioFileName = $"{currentDialogueFileName}_node{nodeId}";
+        AudioClip audioClip = Resources.Load<AudioClip>($"Audio/Dialogue/{audioFileName}");
+        
+        if (audioClip != null)
+        {
+            dialogueAudioSource.clip = audioClip;
+            dialogueAudioSource.Play();
+        }
+        else
+        {
+            Debug.LogWarning($"Dialogue audio not found: {audioFileName}");
+        }
+    }
+
+    private void StopDialogueAudio()
+    {
+        if (dialogueAudioSource != null && dialogueAudioSource.isPlaying)
+        {
+            dialogueAudioSource.Stop();
+            dialogueAudioSource.clip = null;
+        }
+    }
+
+    public void SetDialogueVolume(float volume)
+    {
+        dialogueVolume = Mathf.Clamp01(volume);
+        if (dialogueAudioSource != null)
+        {
+            dialogueAudioSource.volume = dialogueVolume;
+        }
+    }
+
+    public void SetDialogueAudioEnabled(bool enabled)
+    {
+        enableDialogueAudio = enabled;
+        if (!enabled)
+        {
+            StopDialogueAudio();
         }
     }
 

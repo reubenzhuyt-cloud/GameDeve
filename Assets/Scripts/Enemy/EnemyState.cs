@@ -7,10 +7,9 @@ public class EnemyState : EntityState
     public StateMachine<EnemyState> stateMachine { get; private set; }
     private string animBoolName;
 
-    public EnemyState(Enemy _enemy, StateMachine _stateMachine, string _animBoolName)
+    public EnemyState(Enemy _enemy, StateMachine<EnemyState> _stateMachine, string _animBoolName) : base(_enemy, _animBoolName)
     {
         this.enemy = _enemy;
-        this.animBoolName = _animBoolName;
         this.stateMachine = _stateMachine;
     }
 

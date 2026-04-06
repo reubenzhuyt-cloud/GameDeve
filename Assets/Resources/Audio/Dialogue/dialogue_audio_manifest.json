@@ -1,0 +1,247 @@
+[
+  {
+    "audio_files": [
+      {
+        "node_id": 0,
+        "actor_id": 1,
+        "text": "很好，你终于做出了决定。这盏引魂灯是我亲手所制，如今交给你了。",
+        "actor_name": "MengPo",
+        "filename": "MengPoAccepted_node0.wav"
+      },
+      {
+        "node_id": 1,
+        "actor_id": 1,
+        "text": "记住，游魂需要安抚而非驱散。用你的心去感受他们的执念，引导他们走向彼岸。",
+        "actor_name": "MengPo",
+        "filename": "MengPoAccepted_node1.wav"
+      },
+      {
+        "node_id": 2,
+        "actor_id": 1,
+        "text": "去吧，白云浦那边有游魂需要你的帮助。穿过阴阳界门，你的旅程即将开始。",
+        "actor_name": "MengPo",
+        "filename": "MengPoAccepted_node2.wav"
+      }
+    ],
+    "file_name": "MengPoAccepted",
+    "dialogue_name": "孟婆对话-已接受"
+  },
+  {
+    "audio_files": [
+      {
+        "node_id": 0,
+        "actor_id": 1,
+        "text": "年轻人，你考虑得如何了？",
+        "actor_name": "MengPo",
+        "filename": "MengPoConsidering_node0.wav"
+      },
+      {
+        "node_id": 2,
+        "actor_id": 1,
+        "text": "很好，你的心志终于坚定了。这盏引魂灯会指引你找到迷失的灵魂。",
+        "actor_name": "MengPo",
+        "filename": "MengPoConsidering_node2.wav"
+      },
+      {
+        "node_id": 3,
+        "actor_id": 1,
+        "text": "去吧，白云浦那边有游魂需要安抚。穿过阴阳界门，你的旅程即将开始。",
+        "actor_name": "MengPo",
+        "filename": "MengPoConsidering_node3.wav"
+      },
+      {
+        "node_id": 4,
+        "actor_id": 1,
+        "text": "无妨，当你准备好的时候，再来找我便是。时间对于彼岸来说，并无意义。",
+        "actor_name": "MengPo",
+        "filename": "MengPoConsidering_node4.wav"
+      }
+    ],
+    "file_name": "MengPoConsidering",
+    "dialogue_name": "孟婆对话-考虑中"
+  },
+  {
+    "audio_files": [
+      {
+        "node_id": 0,
+        "actor_id": 1,
+        "text": "年轻人，你终于来了。我在奈何桥畔等候多时了。",
+        "actor_name": "MengPo",
+        "filename": "MengPoDialogue_node0.wav"
+      },
+      {
+        "node_id": 1,
+        "actor_id": 0,
+        "text": "孟婆前辈，您找我有什么事？",
+        "actor_name": "Player",
+        "filename": "MengPoDialogue_node1.wav"
+      },
+      {
+        "node_id": 2,
+        "actor_id": 1,
+        "text": "这盏引魂灯，是我亲手所制。如今世间游魂四散，需要有人引导他们前往彼岸。",
+        "actor_name": "MengPo",
+        "filename": "MengPoDialogue_node2.wav"
+      },
+      {
+        "node_id": 3,
+        "actor_id": 1,
+        "text": "你愿意接受这份使命，成为引魂之人吗？",
+        "actor_name": "MengPo",
+        "filename": "MengPoDialogue_node3.wav"
+      },
+      {
+        "node_id": 5,
+        "actor_id": 1,
+        "text": "很好，你的心志坚定。这盏灯会指引你找到迷失的灵魂。",
+        "actor_name": "MengPo",
+        "filename": "MengPoDialogue_node5.wav"
+      },
+      {
+        "node_id": 6,
+        "actor_id": 1,
+        "text": "去吧，白云浦那边有游魂需要安抚。穿过阴阳界门，你的旅程即将开始。",
+        "actor_name": "MengPo",
+        "filename": "MengPoDialogue_node6.wav"
+      },
+      {
+        "node_id": 7,
+        "actor_id": 1,
+        "text": "无妨，当你准备好的时候，再来找我便是。",
+        "actor_name": "MengPo",
+        "filename": "MengPoDialogue_node7.wav"
+      }
+    ],
+    "file_name": "MengPoDialogue",
+    "dialogue_name": "孟婆对话"
+  },
+  {
+    "audio_files": [
+      {
+        "node_id": 0,
+        "actor_id": 1,
+        "text": "引魂之人，你回来了。有什么发现吗？",
+        "actor_name": "MengPo",
+        "filename": "MengPoMission_node0.wav"
+      },
+      {
+        "node_id": 2,
+        "actor_id": 1,
+        "text": "很好，你的努力没有白费。记住，每个游魂都有自己的故事，耐心倾听他们的心声。",
+        "actor_name": "MengPo",
+        "filename": "MengPoMission_node2.wav"
+      },
+      {
+        "node_id": 3,
+        "actor_id": 1,
+        "text": "继续前行吧，还有更多的灵魂等待你的指引。",
+        "actor_name": "MengPo",
+        "filename": "MengPoMission_node3.wav"
+      },
+      {
+        "node_id": 4,
+        "actor_id": 1,
+        "text": "不要着急，探索这片土地，你会找到需要帮助的灵魂。阴阳界门会带你前往不同的地方。",
+        "actor_name": "MengPo",
+        "filename": "MengPoMission_node4.wav"
+      },
+      {
+        "node_id": 5,
+        "actor_id": 1,
+        "text": "引魂灯可以安抚迷失的灵魂，也可以驱散恶灵。靠近游魂时，它会发出柔和的光芒。",
+        "actor_name": "MengPo",
+        "filename": "MengPoMission_node5.wav"
+      },
+      {
+        "node_id": 6,
+        "actor_id": 1,
+        "text": "用心去感受，你会知道该如何使用它的。",
+        "actor_name": "MengPo",
+        "filename": "MengPoMission_node6.wav"
+      }
+    ],
+    "file_name": "MengPoMission",
+    "dialogue_name": "孟婆对话-任务进行中"
+  },
+  {
+    "audio_files": [
+      {
+        "node_id": 0,
+        "actor_id": 0,
+        "text": "这是一块破旧的路标，上面依稀可见几个字：\"白云浦 - 向东\"",
+        "actor_name": "Player",
+        "filename": "SignpostDialogue_node0.wav"
+      }
+    ],
+    "file_name": "SignpostDialogue",
+    "dialogue_name": "路标对话"
+  },
+  {
+    "audio_files": [
+      {
+        "node_id": 0,
+        "actor_id": 0,
+        "text": "一块古老的石碑，上面刻着：\"阴阳两界，一念之间。善念引魂，恶念堕狱。\"",
+        "actor_name": "Player",
+        "filename": "StoneTabletDialogue_node0.wav"
+      },
+      {
+        "node_id": 1,
+        "actor_id": 0,
+        "text": "石碑散发着淡淡的光芒，似乎蕴含着某种神秘的力量。",
+        "actor_name": "Player",
+        "filename": "StoneTabletDialogue_node1.wav"
+      }
+    ],
+    "file_name": "StoneTabletDialogue",
+    "dialogue_name": "神秘石碑对话"
+  },
+  {
+    "audio_files": [
+      {
+        "node_id": 0,
+        "actor_id": 2,
+        "text": "......谢谢你......那温暖的光芒......让我想起了生前......",
+        "actor_name": "WeakSoul",
+        "filename": "WeakSoulDialogue_node0.wav"
+      },
+      {
+        "node_id": 1,
+        "actor_id": 0,
+        "text": "你是谁？为什么会在这里徘徊？",
+        "actor_name": "Player",
+        "filename": "WeakSoulDialogue_node1.wav"
+      },
+      {
+        "node_id": 2,
+        "actor_id": 2,
+        "text": "我......我已经不记得自己的名字了......只记得......饥饿......无尽的饥饿......",
+        "actor_name": "WeakSoul",
+        "filename": "WeakSoulDialogue_node2.wav"
+      },
+      {
+        "node_id": 3,
+        "actor_id": 2,
+        "text": "你的光芒让我感到安宁......我想......我可以安心地离去了......",
+        "actor_name": "WeakSoul",
+        "filename": "WeakSoulDialogue_node3.wav"
+      },
+      {
+        "node_id": 5,
+        "actor_id": 2,
+        "text": "谢谢你......引魂之人......愿你的光芒照亮更多迷失的灵魂......",
+        "actor_name": "WeakSoul",
+        "filename": "WeakSoulDialogue_node5.wav"
+      },
+      {
+        "node_id": 6,
+        "actor_id": 2,
+        "text": "你有一颗善良的心......愿孟婆大人的指引与你同在......",
+        "actor_name": "WeakSoul",
+        "filename": "WeakSoulDialogue_node6.wav"
+      }
+    ],
+    "file_name": "WeakSoulDialogue",
+    "dialogue_name": "虚弱游魂对话"
+  }
+]

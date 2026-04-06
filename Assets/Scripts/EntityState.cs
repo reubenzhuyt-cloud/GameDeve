@@ -27,7 +27,7 @@ public class EntityState
 
     public virtual void Exit()
     {
-        // entity.animator.SetBool(animationBoolName, false);
+        entity.animator.SetBool(animationBoolName, false);
         Debug.Log(entity.name + " Exit " + animationBoolName);
     }
 }

@@ -42,12 +42,22 @@ public class Player : Entity
     {
         base.Start();
         stateMachine.Initialize(idleState);
+
+        if (interactionUGUI != null && UIManager.instance != null)
+        {
+            UIManager.instance.RegisterPanel(UIType.InteractionTip, interactionUGUI.gameObject, false, true);
+        }
     }
     public override void Update()
     {
         base.Update();
         stateMachine.currentState.Update();
-        if (interactionUGUI.gameObject.activeSelf && stateMachine.currentState != chatState)
+        
+        bool interactionVisible = UIManager.instance != null 
+            ? UIManager.instance.IsVisible(UIType.InteractionTip) 
+            : (interactionUGUI != null && interactionUGUI.gameObject.activeSelf);
+            
+        if (interactionVisible && stateMachine.currentState != chatState)
         {
             if (Input.GetKeyDown(KeyCode.F))
             {
@@ -109,8 +119,19 @@ public class Player : Entity
         }
         if (interactionUGUI != null)
         {
-            interactionUGUI.gameObject.SetActive(_show);
             interactionUGUI.text = "Press F to interact";
+            
+            if (UIManager.instance != null)
+            {
+                if (_show)
+                    UIManager.instance.Show(UIType.InteractionTip);
+                else
+                    UIManager.instance.Hide(UIType.InteractionTip);
+            }
+            else
+            {
+                interactionUGUI.gameObject.SetActive(_show);
+            }
         }
         else
         {
@@ -140,7 +161,11 @@ public class Player : Entity
     }
     public void OnTriggerStay2D(Collider2D other)
     {
-        if (other.CompareTag("CanInteractWith") && !interactionUGUI.gameObject.activeSelf)
+        bool interactionVisible = UIManager.instance != null 
+            ? UIManager.instance.IsVisible(UIType.InteractionTip) 
+            : (interactionUGUI != null && interactionUGUI.gameObject.activeSelf);
+            
+        if (other.CompareTag("CanInteractWith") && !interactionVisible)
         {
             ShowInteractionUGUI(true);
             interactionUGUI.transform.position = other.GetComponent<Transform>().position

@@ -25,7 +25,7 @@ DIALOGUE_DIR = PROJECT_ROOT / "Assets" / "Resources" / "Dialogue"
 AUDIO_OUTPUT_DIR = PROJECT_ROOT / "Assets" / "Resources" / "Audio" / "Dialogue"
 
 ACTOR_STYLES = {
-    0: "年轻男声，语气平和，略带好奇",
+    0: "年轻女声，语气平和，略带好奇",
     1: "老年女声，慈祥温和，语速较慢，带有神秘感",
     2: "虚弱的声音，飘渺空灵，带有叹息感",
     3: "中性声音，平静客观"

@@ -260,7 +260,7 @@ public class DialogueSystem : MonoBehaviour
             RectTransform rectTransform = choiceButton.GetComponent<RectTransform>();
 
             float yPos = i * (buttonHeight + spacing) - 80f;
-            rectTransform.anchoredPosition = new Vector2(-100f, yPos);
+            rectTransform.anchoredPosition = new Vector2(0f, yPos);
 
             Button button = choiceButton.GetComponent<Button>();
             TextMeshProUGUI buttonTextUGUI = choiceButton.GetComponentInChildren<TextMeshProUGUI>();

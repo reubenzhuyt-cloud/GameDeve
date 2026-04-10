@@ -100,14 +100,24 @@ public class DialogueSystem : MonoBehaviour
         dialogueAudioSource.playOnAwake = false;
         dialogueAudioSource.loop = false;
         dialogueAudioSource.volume = dialogueVolume;
+    }
 
-        if (UIManager.instance != null)
-        {
-            if (dialoguePanel != null)
-                UIManager.instance.RegisterPanel(UIType.DialoguePanel, dialoguePanel, true, true);
-            if (choicePanel != null)
-                UIManager.instance.RegisterPanel(UIType.ChoicePanel, choicePanel, false, true);
-        }
+    private void Start()
+    {
+        EnsureUIManagerPanelsRegistered();
+    }
+
+    /// <summary>
+    /// UIManager may not exist yet in Awake; also call before opening dialogue so registration always runs.
+    /// </summary>
+    private void EnsureUIManagerPanelsRegistered()
+    {
+        if (UIManager.instance == null)
+            return;
+        if (dialoguePanel != null)
+            UIManager.instance.RegisterPanel(UIType.DialoguePanel, dialoguePanel, true, true);
+        if (choicePanel != null)
+            UIManager.instance.RegisterPanel(UIType.ChoicePanel, choicePanel, false, true);
     }
 
     public void StartDialogue(string dialogueFileName)
@@ -135,6 +145,8 @@ public class DialogueSystem : MonoBehaviour
             Debug.LogError($"Dialogue nodes list is empty");
             return;
         }
+
+        EnsureUIManagerPanelsRegistered();
 
         currentDialogue = dialogue;
         currentNode = dialogue.nodes[0];

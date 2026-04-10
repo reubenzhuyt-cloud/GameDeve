@@ -13,17 +13,17 @@ public class EnemyState : EntityState
         this.stateMachine = _stateMachine;
     }
 
-    public virtual void Enter()
+    public override void Enter()
     {
 
     }
 
-    public virtual void Update()
+    public override void Update()
     {
 
     }
 
-    public virtual void Exit()
+    public override void Exit()
     {
 
     }

@@ -16,12 +16,26 @@ public class PlayerChatState : PlayerState
 
         onDialogueEndAction = (DialogueData dialogue) =>
         {
+            if (player.pendingLightSootheSoul != null)
+            {
+                player.pendingLightSootheSoul.CompleteLightSoothe();
+                player.StartLightSkillCD();
+                player.pendingLightSootheSoul = null;
+            }
             player.stateMachine.ChangeState(player.idleState);
         };
         
         if (DialogueSystem.instance != null)
         {
             DialogueSystem.instance.onDialogueEnd.AddListener(onDialogueEndAction);
+
+            if (!string.IsNullOrEmpty(player.pendingLightSootheDialogueFile))
+            {
+                string file = player.pendingLightSootheDialogueFile;
+                player.pendingLightSootheDialogueFile = null;
+                DialogueSystem.instance.StartDialogue(file);
+                return;
+            }
             
             if (player.currentNPC != null)
             {

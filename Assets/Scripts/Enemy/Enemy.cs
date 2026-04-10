@@ -24,13 +24,15 @@ public class Enemy : Entity
         base.Awake();
     }
 
-    private void Start()
+    public override void Start()
     {
+        base.Start();
         //stateMachine.Initialize(idleState);
     }
 
-    private void Update()
+    public override void Update()
     {
+        base.Update();
         stateMachine.currentState.Update();
     }
 

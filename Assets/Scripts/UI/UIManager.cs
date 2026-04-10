@@ -12,11 +12,12 @@ public enum UIType
     QuestTracker = 5,
     SpecialAlert = 6,
     SoulLanternUI = 7,
-    TimeUI = 8
+    TimeUI = 8,
+    GameplayTip = 9
 }
 
 [System.Serializable]
-public class UIPanel
+internal class UIPanel
 {
     public UIType type;
     public GameObject gameObject;
@@ -27,30 +28,47 @@ public class UIPanel
 }
 
 [System.Serializable]
-public class UIExclusiveRule
+internal class UIExclusiveRule
 {
     public UIType exclusiveUI;
     public List<UIType> hideWhenActive = new List<UIType>();
     public List<UIType> blockWhenActive = new List<UIType>();
 }
 
+/// <summary>Scene load: pick UI type + panel root only. CanvasGroup / exclusive use defaults.</summary>
+[System.Serializable]
+public class UIScenePanelEntry
+{
+    public UIType type;
+    public GameObject root;
+}
+
 public class UIManager : MonoBehaviour
 {
     public static UIManager instance { get; private set; }
 
-    [Header("UI Panels")]
-    [SerializeField] private List<UIPanel> uiPanels = new List<UIPanel>();
+    [Header("Scene Panels (only list — assign panel roots here)")]
+    [Tooltip("Optional: e.g. main Canvas, turned on before panel roots.")]
+    [SerializeField] private GameObject sceneUIRootWakeFirst;
 
-    [Header("Exclusive Rules")]
+    [SerializeField] private List<UIScenePanelEntry> scenePanels = new List<UIScenePanelEntry>();
+
+    [HideInInspector]
     [SerializeField] private List<UIExclusiveRule> exclusiveRules = new List<UIExclusiveRule>();
 
     [Header("Settings")]
     [SerializeField] private float defaultFadeSpeed = 5f;
 
+    [Header("Gameplay Tip")]
+    [Tooltip("Assign the GameplayTipUI in the scene, or leave empty to search (includes inactive).")]
+    [SerializeField] private GameplayTipUI gameplayTipUI;
+
     private Dictionary<UIType, UIPanel> panelDict = new Dictionary<UIType, UIPanel>();
     private Dictionary<UIType, Coroutine> fadeCoroutines = new Dictionary<UIType, Coroutine>();
     private Dictionary<UIType, UIExclusiveRule> exclusiveRuleDict = new Dictionary<UIType, UIExclusiveRule>();
     private HashSet<UIType> activeExclusiveUIs = new HashSet<UIType>();
+
+    private bool scenePanelsPrepared;
 
     public UnityEvent<UIType> onUIShown = new UnityEvent<UIType>();
     public UnityEvent<UIType> onUIHidden = new UnityEvent<UIType>();
@@ -69,7 +87,84 @@ public class UIManager : MonoBehaviour
         }
 
         InitializeExclusiveRules();
-        InitializePanels();
+        ResolveGameplayTipReference();
+    }
+
+    /// <summary>
+    /// Activate scene panel roots for one frame, then RegisterPanel each. Run once (e.g. from GameManager.PrepareUI).
+    /// </summary>
+    public System.Collections.IEnumerator PrepareScenePanelsRoutine()
+    {
+        if (scenePanelsPrepared)
+            yield break;
+
+        if (sceneUIRootWakeFirst != null)
+            sceneUIRootWakeFirst.SetActive(true);
+
+        for (int i = 0; i < scenePanels.Count; i++)
+        {
+            UIScenePanelEntry e = scenePanels[i];
+            if (e.root != null)
+                e.root.SetActive(true);
+        }
+
+        WakeGameplayTipHost();
+
+        yield return null;
+
+        for (int i = 0; i < scenePanels.Count; i++)
+        {
+            UIScenePanelEntry e = scenePanels[i];
+            if (e.root == null)
+                continue;
+
+            RegisterPanel(e.type, e.root, useCanvasGroup: true, startHidden: true, isExclusive: false);
+        }
+
+        scenePanelsPrepared = true;
+    }
+
+    private void ResolveGameplayTipReference()
+    {
+        if (gameplayTipUI != null)
+            return;
+
+        GameplayTipUI[] found = Object.FindObjectsByType<GameplayTipUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        if (found != null && found.Length > 0)
+            gameplayTipUI = found[0];
+    }
+
+    /// <summary>
+    /// Call after scene UI is prepared (e.g. from GameManager.PrepareUI). Triggers configured startup tip.
+    /// </summary>
+    public void OnSceneUIReady()
+    {
+        ResolveGameplayTipReference();
+        gameplayTipUI?.PlayIntroFromManager();
+    }
+
+    private void ShowGameplayTipInternal(string content, float duration)
+    {
+        ResolveGameplayTipReference();
+        if (gameplayTipUI == null)
+        {
+            Debug.LogWarning("[UIManager] GameplayTipUI not found.");
+            return;
+        }
+        gameplayTipUI.Show(content, duration);
+    }
+
+    private void HideGameplayTipInternal()
+    {
+        ResolveGameplayTipReference();
+        gameplayTipUI?.HideNow();
+    }
+
+    private void WakeGameplayTipHost()
+    {
+        ResolveGameplayTipReference();
+        if (gameplayTipUI != null)
+            gameplayTipUI.gameObject.SetActive(true);
     }
 
     private void InitializeExclusiveRules()
@@ -89,32 +184,6 @@ public class UIManager : MonoBehaviour
                 blockWhenActive = new List<UIType> { UIType.QuestPanel }
             };
             exclusiveRuleDict[UIType.DialoguePanel] = dialogueRule;
-        }
-    }
-
-    private void InitializePanels()
-    {
-        panelDict.Clear();
-
-        foreach (var panel in uiPanels)
-        {
-            if (panel.gameObject == null)
-            {
-                Debug.LogWarning($"[UIManager] Panel {panel.type} has no GameObject assigned.");
-                continue;
-            }
-
-            if (panel.canvasGroup == null)
-            {
-                panel.canvasGroup = panel.gameObject.GetComponent<CanvasGroup>();
-            }
-
-            panelDict[panel.type] = panel;
-
-            if (panel.startHidden)
-            {
-                HideImmediate(panel);
-            }
         }
     }
 
@@ -231,6 +300,19 @@ public class UIManager : MonoBehaviour
     public bool IsPanelRegistered(UIType type)
     {
         return panelDict.ContainsKey(type);
+    }
+
+    /// <summary>切换场景后，卸载场景里的面板引用会变成空，去掉以免 Show 指向已销毁物体。</summary>
+    public void RemoveStalePanelReferences()
+    {
+        var stale = new List<UIType>();
+        foreach (var kv in panelDict)
+        {
+            if (kv.Value == null || kv.Value.gameObject == null)
+                stale.Add(kv.Key);
+        }
+        foreach (var t in stale)
+            panelDict.Remove(t);
     }
 
     public GameObject GetPanel(UIType type)
@@ -383,77 +465,7 @@ public class UIManager : MonoBehaviour
         fadeCoroutines[panel.type] = null;
     }
 
-    public void HideAll()
-    {
-        foreach (var kvp in panelDict)
-        {
-            HideImmediate(kvp.Value);
-        }
-        activeExclusiveUIs.Clear();
-    }
-
-    public void ShowAll()
-    {
-        foreach (var kvp in panelDict)
-        {
-            ShowImmediate(kvp.Value);
-        }
-    }
-
     #region Static Methods
-
-    public static void ShowUI(UIType type, bool instant = true)
-    {
-        if (instance != null)
-        {
-            instance.Show(type, instant);
-        }
-        else
-        {
-            Debug.LogWarning("[UIManager] Instance not found. Make sure UIManager is in the scene.");
-        }
-    }
-
-    public static void HideUI(UIType type, bool instant = true)
-    {
-        if (instance != null)
-        {
-            instance.Hide(type, instant);
-        }
-    }
-
-    public static void ToggleUI(UIType type, bool instant = true)
-    {
-        if (instance != null)
-        {
-            instance.Toggle(type, instant);
-        }
-    }
-
-    public static bool IsUIVisible(UIType type)
-    {
-        if (instance != null)
-        {
-            return instance.IsVisible(type);
-        }
-        return false;
-    }
-
-    public static void RegisterUI(UIType type, GameObject obj, bool useCanvasGroup = true, bool startHidden = true, bool isExclusive = false)
-    {
-        if (instance != null)
-        {
-            instance.RegisterPanel(type, obj, useCanvasGroup, startHidden, isExclusive);
-        }
-    }
-
-    public static void UnregisterUI(UIType type)
-    {
-        if (instance != null)
-        {
-            instance.UnregisterPanel(type);
-        }
-    }
 
     public static bool IsUIBlocked(UIType type)
     {
@@ -464,13 +476,18 @@ public class UIManager : MonoBehaviour
         return false;
     }
 
-    public static bool HasExclusiveUI()
+    public static void ShowTip(string content, float duration)
     {
         if (instance != null)
-        {
-            return instance.HasActiveExclusiveUI();
-        }
-        return false;
+            instance.ShowGameplayTipInternal(content, duration);
+        else
+            Debug.LogWarning("[UIManager] Instance not found.");
+    }
+
+    public static void HideTipNow()
+    {
+        if (instance != null)
+            instance.HideGameplayTipInternal();
     }
 
     #endregion

@@ -142,6 +142,26 @@ public class WeakSoul : MonoBehaviour, ISooulable
         if (sootheParticles != null && sootheParticles.isPlaying)
             sootheParticles.Stop();
     }
+
+    /// <summary>
+    /// 光芒技能对话结束后调用：进度拉满，随后由 Update 走消散逻辑。
+    /// </summary>
+    public void CompleteLightSoothe()
+    {
+        if (isDissipated) return;
+
+        currentSootheProgress = maxSootheProgress;
+
+        if (!isBeingSoothed)
+        {
+            isBeingSoothed = true;
+            onSootheStart?.Invoke();
+            if (sootheParticles != null && !sootheParticles.isPlaying)
+                sootheParticles.Play();
+        }
+
+        onSootheProgress?.Invoke();
+    }
     
     private void Dissipate()
     {

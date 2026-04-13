@@ -19,7 +19,7 @@ public class Player : Entity
     public NPC currentNPC;
     public InteractableObject currentInteractable;
     public float XInput;
-    public int playerFaceRight { get; private set; } = -1;
+    public int playerFaceRight { get; private set; } = 1;
     public StateMachine<PlayerState> stateMachine { get; private set; }
     public PlayerIdleState idleState { get; private set; }
     public PlayerMoveState moveState { get; private set; }

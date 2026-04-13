@@ -1915,8 +1915,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.04815796, y: -0.3424568}
-  m_Size: {x: 0.83175474, y: 2.6480722}
+  m_Offset: {x: 0.61956334, y: 0.85896266}
+  m_Size: {x: 1.9159598, y: 3.5857618}
   m_Direction: 0
 --- !u!114 &1540780862
 MonoBehaviour:
@@ -1931,14 +1931,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GroundCheck: {fileID: 1910156704}
-  GroundCheckDistance: 0.54
+  GroundCheckDistance: 0.6
   whatIsGround:
     serializedVersion: 2
     m_Bits: 524288
+  attackCheck: {fileID: 0}
+  attackCheckRadius: 0
   moveSpeed: 2.64
   jumpForce: 8
   interactionUGUI: {fileID: 131228501}
+  CounterDuration: 0
   dialogueObj: {fileID: 0}
+  dialogueLogic: {fileID: 0}
+  currentNPC: {fileID: 0}
+  currentInteractable: {fileID: 0}
   XInput: 0
 --- !u!1 &1569488511
 GameObject:
@@ -1997,6 +2003,8 @@ MonoBehaviour:
   - 4
   actorAnimators: []
   animationTriggerDuration: 0.1
+  enableDialogueAudio: 1
+  dialogueVolume: 1
   onDialogueEnd:
     m_PersistentCalls:
       m_Calls: []
@@ -2010,6 +2018,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onDialogueNodeChange:
+    m_PersistentCalls:
+      m_Calls: []
+  onChoiceSelected:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &1606951508
@@ -2521,7 +2532,10 @@ MonoBehaviour:
   bgmClips:
   - {fileID: 8300000, guid: a1b7d46d81b38ac46bde4e44cf1492a8, type: 3}
   bgmVolume: 0.4
+  bgmPitch: 0.45
   loopBGM: 1
+  stepSource: {fileID: 0}
+  stepVolume: 0.5
 --- !u!4 &1884365836
 Transform:
   m_ObjectHideFlags: 0
@@ -2562,7 +2576,7 @@ Transform:
   m_GameObject: {fileID: 1910156703}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.07, y: -1.21, z: -0.47465777}
+  m_LocalPosition: {x: 1.35, y: -1.21, z: -0.47465777}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

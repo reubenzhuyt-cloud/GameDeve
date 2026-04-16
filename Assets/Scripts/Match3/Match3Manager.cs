@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// 三消表现层：数组逻辑在 <see cref="Match3BoardSimulator"/>。
-/// 拖动：拖动块略放大、目标格棋子缩小且<strong>不位移</strong>；松手后若可消则 0.1s 交换动画 → 清消除格并停顿 → 再下落补块并停顿；不可消则原路缩回。
+/// 拖动：邻格交换轴由两格中心连线决定（上下左右均正确）；棋子随指针偏移；按下即放大选中块，再可随拉力增至 dragSelectedScaleMax；邻格缩小带死区。松手可消则交换序列；不可消则弹回。
 /// 测试用原子交换仍用 <see cref="TryCommitSwap"/>（<see cref="Match3BoardSimulator.TrySwap"/>）。
 /// </summary>
 public sealed class Match3Manager : MonoBehaviour
@@ -24,7 +24,13 @@ public sealed class Match3Manager : MonoBehaviour
     [SerializeField] private float dragCommitThreshold = 0.22f;
     [Tooltip("拖动时拖动块沿轴最大拉出距离（×cellSize）")]
     [SerializeField] private float dragMaxPull = 0.45f;
+    [Tooltip("仅作用于邻格缩小：拉力小于该距离（×cellSize）时邻格保持原大小")]
+    [SerializeField] private float dragScaleDeadZone = 0.06f;
+    [Tooltip("按下并拖动时选中块立即使用的缩放（基础放大）")]
     [SerializeField] private float dragSelectedScale = 1.12f;
+    [Tooltip("沿拉力拉到最大时选中块的缩放（应 ≥ 基础；相等则距离不再放大）")]
+    [SerializeField] private float dragSelectedScaleMax = 1.18f;
+    [Tooltip("达到最大拉力时相邻格棋子的缩放（受死区影响）")]
     [SerializeField] private float dragNeighborScale = 0.82f;
 
     [Header("Sequence (seconds)")]
@@ -156,7 +162,7 @@ public sealed class Match3Manager : MonoBehaviour
         _neighborCol = -1;
         _lastValidLocalDuringDrag = local;
         gem.transform.SetAsLastSibling();
-        ApplyDragScalesOnly();
+        gem.transform.localScale = Vector3.one * dragSelectedScale;
     }
 
     private void UpdateDrag()
@@ -170,10 +176,14 @@ public sealed class Match3Manager : MonoBehaviour
         Vector2 center = CellCenterLocal(_startRow, _startCol);
         Vector2 delta = _lastValidLocalDuringDrag - center;
 
+        float maxPullWorld = dragMaxPull * cellSize;
+        float deadWorld = dragScaleDeadZone * cellSize;
+
         if (!TryResolveNeighborFromDelta(delta, out int nr, out int nc))
         {
-            PlaceCell(_startGem.transform, _startRow, _startCol);
-            _startGem.transform.localScale = Vector3.one * dragSelectedScale;
+            Vector2 offset = Vector2.ClampMagnitude(delta, maxPullWorld);
+            _startGem.transform.localPosition = CellLocalPosition(_startRow, _startCol) + (Vector3)offset;
+            ApplyDragScalesForDistance(offset.magnitude, deadWorld, maxPullWorld, null);
             ClearNeighborDragVisual();
             return;
         }
@@ -186,19 +196,16 @@ public sealed class Match3Manager : MonoBehaviour
             _neighborGem = _cells[nr, nc];
         }
 
-        Vector2 axis = new Vector2(nc - _startCol, nr - _startRow);
-        float pull = Vector2.Dot(delta, axis.normalized);
-        pull = Mathf.Clamp(pull, 0f, dragMaxPull * cellSize);
-        Vector2 offset = axis.normalized * pull;
+        Vector2 axis = GetSwapAxisLocal(_startRow, _startCol, nr, nc);
+        float pull = Vector2.Dot(delta, axis);
+        pull = Mathf.Clamp(pull, 0f, maxPullWorld);
+        Vector2 offsetAxis = axis * pull;
 
-        _startGem.transform.localPosition = CellLocalPosition(_startRow, _startCol) + (Vector3)offset;
-        _startGem.transform.localScale = Vector3.one * dragSelectedScale;
-
+        _startGem.transform.localPosition = CellLocalPosition(_startRow, _startCol) + (Vector3)offsetAxis;
         if (_neighborGem != null)
-        {
             PlaceCell(_neighborGem.transform, _neighborRow, _neighborCol);
-            _neighborGem.transform.localScale = Vector3.one * dragNeighborScale;
-        }
+
+        ApplyDragScalesForDistance(pull, deadWorld, maxPullWorld, _neighborGem);
     }
 
     private void ClearNeighborDragVisual()
@@ -465,7 +472,7 @@ public sealed class Match3Manager : MonoBehaviour
 
     private IEnumerator CoGravityPassVisual(float duration)
     {
-        var items = new List<(Transform tr, Vector3 start, Vector3 end)>();
+        var items = new List<(Transform tr, Vector3 start, Vector3 end, int row, int col)>();
         for (int r = 0; r < Match3BoardSimulator.Size; r++)
         {
             for (int c = 0; c < Match3BoardSimulator.Size; c++)
@@ -478,7 +485,7 @@ public sealed class Match3Manager : MonoBehaviour
                 float rowT = (Match3BoardSimulator.Size - r) / (float)Match3BoardSimulator.Size;
                 float lift = cellSize * gravityFallHeightFactor * (rowT + 0.12f);
                 Vector3 start = end + Vector3.up * lift;
-                items.Add((tr, start, end));
+                items.Add((tr, start, end, r, c));
                 tr.localPosition = start;
             }
         }
@@ -486,14 +493,14 @@ public sealed class Match3Manager : MonoBehaviour
         float dur = Mathf.Max(0.01f, duration);
         for (float t = 0f; t < dur; t += Time.deltaTime)
         {
-            float u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / dur));
-            foreach (var (tr, start, end) in items)
+            float u = Mathf.Clamp01(t / dur);
+            foreach (var (tr, start, end, _, _) in items)
                 tr.localPosition = Vector3.Lerp(start, end, u);
             yield return null;
         }
 
-        foreach (var (tr, start, end) in items)
-            tr.localPosition = end;
+        foreach (var (tr, _, _, row, col) in items)
+            PlaceCell(tr, row, col);
     }
 
     /// <summary>与输入/UI 无关：原子 TrySwap + Sync（供测试或跳过动画的路径）。</summary>
@@ -505,10 +512,37 @@ public sealed class Match3Manager : MonoBehaviour
         return true;
     }
 
-    private void ApplyDragScalesOnly()
+    /// <summary>
+    /// 选中块：按下已是 dragSelectedScale，再随距离在 dragSelectedScaleMax 间过渡（无死区）。邻格：死区外才从 1 缩到 dragNeighborScale。
+    /// </summary>
+    private void ApplyDragScalesForDistance(float distance, float deadWorld, float maxPullWorld, Match3GemView neighbor)
     {
-        if (_startGem != null)
-            _startGem.transform.localScale = Vector3.one * dragSelectedScale;
+        if (_startGem == null)
+            return;
+
+        float tSel = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(distance / Mathf.Max(1e-4f, maxPullWorld)));
+        float hi = Mathf.Max(dragSelectedScale, dragSelectedScaleMax);
+        float selectedS = Mathf.Lerp(dragSelectedScale, hi, tSel);
+        _startGem.transform.localScale = Vector3.one * selectedS;
+
+        if (neighbor != null)
+        {
+            float span = Mathf.Max(1e-4f, maxPullWorld - deadWorld);
+            float rawN = distance <= deadWorld ? 0f : Mathf.Clamp01((distance - deadWorld) / span);
+            float tN = Mathf.SmoothStep(0f, 1f, rawN);
+            float neighborS = Mathf.Lerp(1f, dragNeighborScale, tN);
+            neighbor.transform.localScale = Vector3.one * neighborS;
+        }
+    }
+
+    /// <summary>从起点格心指向邻格格心的单位向量（与 <see cref="CellLocalPosition"/> 一致），用于拉力投影。</summary>
+    private Vector2 GetSwapAxisLocal(int sr, int sc, int nr, int nc)
+    {
+        Vector2 d = CellCenterLocal(nr, nc) - CellCenterLocal(sr, sc);
+        float m = d.magnitude;
+        if (m < 1e-5f)
+            return Vector2.right;
+        return d / m;
     }
 
     private bool TryResolveNeighborFromDelta(Vector2 delta, out int nr, out int nc) =>

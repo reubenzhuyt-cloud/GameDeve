@@ -33,6 +33,8 @@ public sealed class Match3GemPool
         else
             go = Object.Instantiate(_prefabs[idx], _poolRoot);
 
+        go.transform.localPosition = Vector3.zero;
+        go.transform.localRotation = Quaternion.identity;
         go.transform.localScale = Vector3.one;
         var view = go.GetComponent<Match3GemView>();
         if (view != null)
@@ -51,6 +53,8 @@ public sealed class Match3GemPool
 
         go.SetActive(false);
         go.transform.SetParent(_poolRoot, false);
+        go.transform.localPosition = Vector3.zero;
+        go.transform.localRotation = Quaternion.identity;
         _queues[idx].Enqueue(go);
     }
 }

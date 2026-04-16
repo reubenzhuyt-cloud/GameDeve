@@ -124,7 +124,7 @@
     </div>
     <div class="ins" id="inspector">
       <h2>属性</h2>
-      <div class="hint">选中节点编辑属性；修改 actor 后即视为「已填角色」，可作为前序跳转目标。连线：从右侧圆点拖到左侧「入」；未命中时若在附近会自动吸附，否则弹出选择面板。</div>
+      <div class="hint">角色表与白云浦场景一致（玩家 / 渔夫 / 肉包子 / 佃户）。选好角色即视为「已填角色」，可作前序跳转。连线：从右侧圆点拖到左侧「入」；未命中时若在附近会自动吸附，否则弹出选择面板。</div>
       <div id="insBody"></div>
     </div>
   </div>
@@ -149,6 +149,29 @@
 
   const LS_KEY = 'dialogue_editor_v2';
   const SNAP = 16;
+
+  /** 与 BaiYunPu_Day 场景 DialogueSystem.actors 下标一致；导出 JSON 仍只写 actorId 数字 */
+  const ACTOR_OPTIONS = [
+    { id: 0, name: '玩家' },
+    { id: 1, name: '渔夫' },
+    { id: 2, name: '肉包子' },
+    { id: 3, name: '佃户' },
+  ];
+
+  function actorLabel(actorId) {
+    const o = ACTOR_OPTIONS.find((a) => a.id === actorId);
+    return o ? o.name : '（未在表内 ID ' + actorId + '）';
+  }
+
+  function actorSelectHtml(selectedId) {
+    let html = ACTOR_OPTIONS.map(
+      (a) => `<option value="${a.id}"${selectedId === a.id ? ' selected' : ''}>${a.name}</option>`
+    ).join('');
+    if (!ACTOR_OPTIONS.some((a) => a.id === selectedId)) {
+      html += `<option value="${selectedId}" selected>（未在表内）ID ${selectedId}</option>`;
+    }
+    return html;
+  }
 
   const state = {
     name: 'NewDialogue',
@@ -623,8 +646,8 @@
       tip.className = 'sub';
       tip.style.marginTop = '4px';
       tip.textContent = conn.kind === 'line'
-        ? '暂无带 actor 的前序节点；可用 2 先接空台词。填写前序节点的 actor 后会出现 ' + priorBase + '、' + (priorBase + 1) + '…'
-        : '暂无带 actor 的前序节点；选项 1 已会新建空台词。填写 actor 后出现 ' + priorBase + '、' + (priorBase + 1) + '…';
+        ? '暂无已选角色的前序节点；可用 2 先接空台词。在前序节点选好角色后会出现 ' + priorBase + '、' + (priorBase + 1) + '…'
+        : '暂无已选角色的前序节点；选项 1 已会新建空台词。选好角色后出现 ' + priorBase + '、' + (priorBase + 1) + '…';
       opts.appendChild(tip);
     }
 
@@ -635,7 +658,7 @@
       btn.className = 'opt';
       const num = priorBase + n;
       const snip = (node.dialogueText || '').trim().slice(0, 36) || '（无文本）';
-      btn.innerHTML = `<span class="tag">${num}.</span> [${idx}] actor ${node.actorId} · ${escapeHtml(snip)}`;
+      btn.innerHTML = `<span class="tag">${num}.</span> [${idx}] ${escapeHtml(actorLabel(node.actorId))} · ${escapeHtml(snip)}`;
       btn.onclick = () => {
         closeConnectModal();
         applyWire(conn, idx);
@@ -722,7 +745,7 @@
         outs = `<span class="port port-out" title="下一节点"><i></i>下一</span>`;
       }
       div.innerHTML = `
-        <div class="hd ${hd}">${title}<span style="margin-left:auto;font-size:10px;color:#6b7289;">actor ${node.actorId}</span></div>
+        <div class="hd ${hd}">${title}<span style="margin-left:auto;font-size:10px;color:#6b7289;">${escapeHtml(actorLabel(node.actorId))}</span></div>
         <div class="bd">${escapeHtml((node.dialogueText || '（空）').slice(0, 120))}</div>
         <div class="ports">
           <span class="port port-in" data-to="${i}" title="连入"><i></i>入</span>
@@ -742,7 +765,7 @@
       <div class="nitem${state.sel === i ? ' on' : ''}" data-i="${i}" draggable="true">
         <span class="idx">[${i}]</span>
         <div style="flex:1;min-width:0;">
-          <div>${n.isChoiceNode ? '分支' : '台词'} · actor ${n.actorId}</div>
+          <div>${n.isChoiceNode ? '分支' : '台词'} · ${escapeHtml(actorLabel(n.actorId))}</div>
           <div class="snippet">${escapeHtml((n.dialogueText || '').slice(0, 40))}</div>
         </div>
       </div>`).join('');
@@ -783,8 +806,8 @@
     const n = state.nodes[state.sel];
     const i = state.sel;
     let html = `
-      <div class="field"><label>actorId（改后即「已填角色」，可作前序跳转）</label>
-        <input type="number" min="0" id="fActor" value="${n.actorId}" /></div>
+      <div class="field"><label>角色（对应 Unity 内 actorId，保存为数字）</label>
+        <select id="fActor">${actorSelectHtml(n.actorId)}</select></div>
       <div class="field"><label>台词 dialogueText</label>
         <textarea id="fText"></textarea></div>
       <div class="field"><label>animationTrigger</label>
@@ -801,7 +824,7 @@
     $('fText').value = n.dialogueText || '';
     $('fAnim').value = n.animationTrigger || '';
 
-    $('fActor').oninput = () => {
+    $('fActor').onchange = () => {
       n.actorId = +$('fActor').value | 0;
       n.actorSet = true;
       persist();

@@ -8186,10 +8186,10 @@ MonoBehaviour:
   portraitMoveToFirstSiblingWhenShown: 1
   typingSpeed: 0.05
   actors:
-  - player
-  - 2
-  - 3
-  - 4
+  - "\u73A9\u5BB6"
+  - "\u6E14\u592B"
+  - "\u8089\u5305\u5B50"
+  - "\u4F43\u6237"
   actorAnimators: []
   animationTriggerDuration: 0.1
   enableDialogueAudio: 1

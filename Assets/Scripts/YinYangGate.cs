@@ -1,147 +1,80 @@
+using System.Collections;
 using UnityEngine;
-using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 靠近触发区后按 F 传送到目标场景。提示与交互由 Player（InteractionTip）统一处理，避免与对话 F 冲突。
+/// 玩家进入触发区后：显示「正在进入白云浦-倒计时3s」提示，
+/// 保持 3 秒后自动切换场景。
 /// </summary>
+[RequireComponent(typeof(Collider2D))]
 public class YinYangGate : MonoBehaviour
 {
-    [Header("Target Settings")]
-    public string targetSceneName;
-    public Vector3 spawnPosition;
+    [Header("Target Scene")]
+    [SerializeField] private string targetSceneName = "BaiYunPu_Day";
 
-    [Header("Interaction")]
-    [Tooltip("未使用触发器时的备用检测半径；触发器存在时以 OnTrigger 为准")]
-    public float interactionRange = 1.5f;
-    public LayerMask playerLayer;
-    public string interactionPrompt = "按F穿越界门";
+    [Header("Tip")]
+    [SerializeField] private string enteringTipPrefix = "正在进入白云浦-倒计时";
+    [SerializeField] private int countdownSeconds = 3;
+    [SerializeField] private bool cancelWhenExit = true;
 
-    [Header("Visual")]
-    public GameObject gateVisual;
-    public ParticleSystem transitionParticles;
-    public Animator gateAnimator;
-    public bool isActive = true;
+    private Coroutine enteringRoutine;
+    private bool isSwitching;
 
-    [Header("Audio")]
-    public AudioClip transitionSound;
-
-    [Header("Events")]
-    public UnityEvent onPlayerEnterRange;
-    public UnityEvent onPlayerExitRange;
-    public UnityEvent onTransitionStart;
-    public UnityEvent onTransitionComplete;
-
-    private bool playerInRange;
-    private bool isTransitioning;
-
-    private void Awake()
+    private void Reset()
     {
-        if (playerLayer.value == 0)
-            playerLayer = LayerMask.GetMask("Player");
+        Collider2D c = GetComponent<Collider2D>();
+        if (c != null)
+            c.isTrigger = true;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!isActive || isTransitioning)
+        if (isSwitching || enteringRoutine != null)
             return;
         if (!other.CompareTag("Player"))
             return;
 
-        playerInRange = true;
-        Player p = other.GetComponent<Player>();
-        if (p != null)
-            p.activeYinYangGate = this;
-
-        onPlayerEnterRange?.Invoke();
-        ShowInteractionPrompt(p);
+        enteringRoutine = StartCoroutine(EnteringRoutine());
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        if (!other.CompareTag("Player"))
+        if (!cancelWhenExit || !other.CompareTag("Player"))
+            return;
+        if (isSwitching || enteringRoutine == null)
             return;
 
-        playerInRange = false;
-        Player p = other.GetComponent<Player>();
-        if (p != null && p.activeYinYangGate == this)
-            p.activeYinYangGate = null;
-
-        onPlayerExitRange?.Invoke();
-        HideInteractionPrompt(p);
+        StopCoroutine(enteringRoutine);
+        enteringRoutine = null;
+        UIManager.HideTipNow();
     }
 
-    /// <summary>由 Player 在按下 F 时调用，勿与 Update 内重复检测 F。</summary>
-    public void StartTransition()
+    private IEnumerator EnteringRoutine()
     {
-        if (isTransitioning || !isActive || !playerInRange)
+        int sec = Mathf.Max(1, countdownSeconds);
+        for (int i = sec; i >= 1; i--)
+        {
+            UIManager.ShowTip($"{enteringTipPrefix}{i}s", 1.05f);
+            yield return new WaitForSecondsRealtime(1f);
+        }
+
+        isSwitching = true;
+        enteringRoutine = null;
+        SwitchScene();
+    }
+
+    private void SwitchScene()
+    {
+        if (string.IsNullOrEmpty(targetSceneName))
+        {
+            Debug.LogError("[YinYangGate] targetSceneName 为空。", this);
+            isSwitching = false;
             return;
+        }
 
-        isTransitioning = true;
-        onTransitionStart?.Invoke();
-
-        if (transitionParticles != null)
-            transitionParticles.Play();
-
-        if (gateAnimator != null)
-            gateAnimator.SetTrigger("Activate");
-
-        if (transitionSound != null)
-            AudioSource.PlayClipAtPoint(transitionSound, transform.position);
-
-        Invoke(nameof(ExecuteTransition), 0.5f);
-    }
-
-    private void ExecuteTransition()
-    {
         if (SceneTransition.instance != null)
-        {
-            if (spawnPosition != Vector3.zero)
-                SceneTransition.instance.TransitionToScene(targetSceneName, spawnPosition);
-            else
-                SceneTransition.instance.TransitionToScene(targetSceneName);
-        }
+            SceneTransition.instance.TransitionToScene(targetSceneName);
         else
-        {
-            UnityEngine.SceneManagement.SceneManager.LoadScene(targetSceneName);
-        }
-
-        onTransitionComplete?.Invoke();
-    }
-
-    private void ShowInteractionPrompt(Player player)
-    {
-        if (player == null)
-            player = FindFirstObjectByType<Player>();
-
-        Vector3 anchor = transform.position + new Vector3(0f, 1.5f, 0f);
-        player?.SetWorldInteractionTip(true, interactionPrompt, anchor);
-    }
-
-    private void HideInteractionPrompt(Player player)
-    {
-        if (player == null)
-            player = FindFirstObjectByType<Player>();
-
-        player?.SetWorldInteractionTip(false, interactionPrompt, transform.position);
-    }
-
-    public void SetGateActive(bool active)
-    {
-        isActive = active;
-
-        if (gateVisual != null)
-            gateVisual.SetActive(active);
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.magenta;
-        Gizmos.DrawWireSphere(transform.position, interactionRange);
-
-        if (spawnPosition != Vector3.zero)
-        {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(spawnPosition, 0.5f);
-        }
+            SceneManager.LoadScene(targetSceneName);
     }
 }

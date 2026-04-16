@@ -19,8 +19,6 @@ public class Player : Entity
     public DialogueLogicBase dialogueLogic;
     public NPC currentNPC;
     public InteractableObject currentInteractable;
-    /// <summary>若在阴阳门触发区内，优先用 F 传场景，不进入对话状态。</summary>
-    public YinYangGate activeYinYangGate;
     public float XInput;
     public int playerFaceRight { get; private set; } = -1;
     public StateMachine<PlayerState> stateMachine { get; private set; }
@@ -88,15 +86,6 @@ public class Player : Entity
         }
         
         bool inDialogue = DialogueSystem.instance != null && DialogueSystem.instance.IsInDialogue();
-
-        if (activeYinYangGate != null && !inDialogue && stateMachine.currentState != chatState)
-        {
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                activeYinYangGate.StartTransition();
-                return;
-            }
-        }
 
         bool interactionVisible = UIManager.instance != null 
             ? UIManager.instance.IsVisible(UIType.InteractionTip) 

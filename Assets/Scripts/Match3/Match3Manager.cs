@@ -1,6 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
+using UnityEngine.UI;
+#if TMP_PRESENT
+using TMPro;
+#endif
 
 /// <summary>
 /// 三消表现层：数组逻辑在 <see cref="Match3BoardSimulator"/>。
@@ -11,6 +16,7 @@ public sealed class Match3Manager : MonoBehaviour
 {
     [Header("Prefabs (5 colors, index 0 = type 1)")]
     [SerializeField] private GameObject[] gemPrefabs = new GameObject[5];
+    [SerializeField] private GameObject freezePrefab;
 
     [Header("Board")]
     [SerializeField] private Transform boardRoot;
@@ -43,10 +49,16 @@ public sealed class Match3Manager : MonoBehaviour
     [Tooltip("消除粒子预制体（对象池预热 + 播放结束回收）")]
     [SerializeField] private GameObject matchClearVfxPrefab;
     [SerializeField] private int matchClearVfxPoolSize = 12;
+    [Tooltip("冻结块被清除时的粒子预制体（可选）")]
+    [SerializeField] private GameObject freezeClearVfxPrefab;
+    [SerializeField] private int freezeClearVfxPoolSize = 6;
     [SerializeField] private float eliminationShrinkDuration = 0.18f;
     [Tooltip("回收等待 = 估算播放时长 + 该值；并受「最长回收等待」限制")]
     [SerializeField] private float matchVfxReleasePadding = 0.08f;
     [SerializeField] private float matchVfxRecycleMaxSeconds = 8f;
+    [SerializeField] private GameObject scoreTextPrefab;
+    [SerializeField] private int scoreTextPoolSize = 16;
+    [SerializeField] private float scoreTextLifetime = 0.9f;
 
     [Header("Gravity visual (after each sim step)")]
     [SerializeField] private float gravityPassDuration = 0.09f;
@@ -57,6 +69,10 @@ public sealed class Match3Manager : MonoBehaviour
     private Match3BoardSimulator _sim;
     private Match3GemPool _pool;
     private Match3VfxPool _matchVfxPool;
+    private Match3VfxPool _freezeVfxPool;
+    private readonly Queue<GameObject> _freezeViewPool = new Queue<GameObject>();
+    private readonly Queue<GameObject> _scoreTextPool = new Queue<GameObject>();
+    private readonly int[] _colorScores = new int[Match3BoardSimulator.MaxType + 1];
     private Match3GemView[,] _cells;
 
     private bool _pointerDown;
@@ -106,6 +122,9 @@ public sealed class Match3Manager : MonoBehaviour
         _pool = new Match3GemPool(poolRoot, gemPrefabs);
         if (matchClearVfxPrefab != null)
             _matchVfxPool = new Match3VfxPool(matchClearVfxPrefab, poolRoot, matchClearVfxPoolSize);
+        if (freezeClearVfxPrefab != null)
+            _freezeVfxPool = new Match3VfxPool(freezeClearVfxPrefab, poolRoot, freezeClearVfxPoolSize);
+        PrewarmScoreTextPool();
     }
 
     private void OnDisable()
@@ -120,6 +139,7 @@ public sealed class Match3Manager : MonoBehaviour
     private void Start()
     {
         _sim.RandomInitNoMatches();
+        SpawnTestFreezeLineAtCenter();
         SyncFromGrid();
     }
 
@@ -350,17 +370,39 @@ public sealed class Match3Manager : MonoBehaviour
         gemA.transform.localScale = Vector3.one;
         gemB.transform.localScale = Vector3.one;
 
-        while (_sim.HasAnyMatch())
+        while (true)
         {
-            var matches = _sim.CollectMatches();
-            if (matches.Count == 0)
+            // A) 纵向下落/补块后，持续做“检测->消除”，直到这一阶段无可消。
+            while (true)
+            {
+                var matches = _sim.CollectMatches();
+                if (matches.Count == 0)
+                    break;
+
+                yield return CoEliminationShrinkAndParticles(matches);
+                yield return new WaitForSeconds(Mathf.Max(0f, afterClearPause));
+                yield return CoVerticalSettleAndRefillWithVisual();
+                yield return new WaitForSeconds(Mathf.Max(0f, afterSettlePause));
+            }
+
+            // B) 纵向阶段稳定后，执行一次水平补全；之后再检测并回到 A)。
+            bool horizontalMoved = false;
+            {
+                int[,] gridBefore = SnapshotGrid();
+                Match3GemView[,] cellsBefore = SnapshotCells();
+                bool h = _sim.StepHorizontalCompact();
+                if (h)
+                {
+                    horizontalMoved = true;
+                    ApplyHorizontalCellMapping(cellsBefore, gridBefore);
+                    yield return CoTweenGemsToLogicalCells(gravityPassDuration);
+                    yield return new WaitForSeconds(Mathf.Max(0f, afterSettlePause));
+                }
+            }
+
+            // 水平也不再变化，且当前无可消：结算结束。
+            if (!horizontalMoved && !_sim.HasAnyMatch())
                 break;
-
-            yield return CoEliminationShrinkAndParticles(matches);
-            yield return new WaitForSeconds(Mathf.Max(0f, afterClearPause));
-
-            yield return CoSettlePhysicsAndRefillWithVisual();
-            yield return new WaitForSeconds(Mathf.Max(0f, afterSettlePause));
         }
 
         _inputLocked = false;
@@ -369,11 +411,21 @@ public sealed class Match3Manager : MonoBehaviour
 
     private IEnumerator CoEliminationShrinkAndParticles(HashSet<(int r, int c)> matches)
     {
+        var freezeToClear = CollectAdjacentFreezeCells(matches);
+        var colorCounts = new int[Match3BoardSimulator.MaxType + 1];
+        var colorPosSums = new Vector3[Match3BoardSimulator.MaxType + 1];
+
         foreach (var (r, c) in matches)
         {
             if (_sim.IsCellLocked(r, c))
                 continue;
             var gem = _cells[r, c];
+            int type = _sim.GetCell(r, c);
+            if (type >= Match3BoardSimulator.MinType && type <= Match3BoardSimulator.MaxType)
+            {
+                colorCounts[type]++;
+                colorPosSums[type] += CellLocalPosition(r, c);
+            }
             Color tint = gem != null ? gem.GetDisplayColor() : Color.white;
             SpawnMatchClearVfx(r, c, tint);
         }
@@ -400,11 +452,115 @@ public sealed class Match3Manager : MonoBehaviour
                 continue;
             var v = _cells[r, c];
             if (v == null) continue;
-            _pool.Release(v.gameObject);
+            ReleaseCellView(v.gameObject);
             _cells[r, c] = null;
         }
 
+        ClearFreezeCells(freezeToClear);
         _sim.ClearMatchCells(matches);
+        ApplyColorScoreForElimination(colorCounts, colorPosSums);
+    }
+
+    private void ApplyColorScoreForElimination(int[] colorCounts, Vector3[] colorPosSums)
+    {
+        for (int type = Match3BoardSimulator.MinType; type <= Match3BoardSimulator.MaxType; type++)
+        {
+            int cnt = colorCounts[type];
+            if (cnt <= 0)
+                continue;
+
+            int add = ScoreFromEliminationCount(cnt);
+            if (add <= 0)
+                continue;
+
+            _colorScores[type] += add;
+            Vector3 p = colorPosSums[type] / cnt;
+            SpawnScoreText(p, $"+{add}");
+        }
+
+        LogColorScores();
+    }
+
+    private static int ScoreFromEliminationCount(int count)
+    {
+        if (count >= 7) return 10;
+        if (count == 5) return 7;
+        if (count == 4) return 5;
+        if (count == 3) return 3;
+        return 0;
+    }
+
+    private void LogColorScores()
+    {
+        var sb = new StringBuilder();
+        sb.Append("[Match3] Color scores ");
+        for (int t = Match3BoardSimulator.MinType; t <= Match3BoardSimulator.MaxType; t++)
+        {
+            if (t > Match3BoardSimulator.MinType) sb.Append(" | ");
+            sb.Append("T").Append(t).Append(':').Append(_colorScores[t]);
+        }
+        Debug.Log(sb.ToString());
+    }
+
+    private HashSet<(int r, int c)> CollectAdjacentFreezeCells(HashSet<(int r, int c)> matches)
+    {
+        var set = new HashSet<(int r, int c)>();
+        foreach (var (r, c) in matches)
+        {
+            TryMarkFreeze(r - 1, c, set);
+            TryMarkFreeze(r + 1, c, set);
+            TryMarkFreeze(r, c - 1, set);
+            TryMarkFreeze(r, c + 1, set);
+        }
+
+        return set;
+    }
+
+    private void TryMarkFreeze(int r, int c, HashSet<(int r, int c)> set)
+    {
+        if ((uint)r >= Match3BoardSimulator.Size || (uint)c >= Match3BoardSimulator.Size)
+            return;
+        if (!_sim.IsCellLocked(r, c))
+            return;
+        set.Add((r, c));
+    }
+
+    private void ClearFreezeCells(HashSet<(int r, int c)> freezeToClear)
+    {
+        foreach (var (r, c) in freezeToClear)
+        {
+            var v = _cells[r, c];
+            if (v != null)
+                SpawnFreezeClearVfx(r, c);
+
+            if (v != null)
+            {
+                ReleaseCellView(v.gameObject);
+                _cells[r, c] = null;
+            }
+
+            _sim.SetLocked(r, c, false);
+            _sim.SetCell(r, c, 0);
+        }
+    }
+
+    private void SpawnFreezeClearVfx(int row, int col)
+    {
+        if (_freezeVfxPool == null)
+            return;
+
+        var fx = _freezeVfxPool.Get();
+        fx.transform.SetParent(boardRoot, false);
+        fx.transform.localPosition = CellLocalPosition(row, col);
+        fx.transform.localRotation = Quaternion.identity;
+
+        foreach (var ps in fx.GetComponentsInChildren<ParticleSystem>(true))
+            ps.Play(true);
+
+        float wait = Mathf.Min(
+            Match3VfxPool.EstimateMaxPlayDuration(fx) + matchVfxReleasePadding,
+            Mathf.Max(0.1f, matchVfxRecycleMaxSeconds));
+        StartCoroutine(CoReleaseVfx(fx, wait, _freezeVfxPool));
     }
 
     private void SpawnMatchClearVfx(int row, int col, Color tint)
@@ -424,14 +580,66 @@ public sealed class Match3Manager : MonoBehaviour
         float wait = Mathf.Min(
             Match3VfxPool.EstimateMaxPlayDuration(fx) + matchVfxReleasePadding,
             Mathf.Max(0.1f, matchVfxRecycleMaxSeconds));
-        StartCoroutine(CoReleaseMatchVfx(fx, wait));
+        StartCoroutine(CoReleaseVfx(fx, wait, _matchVfxPool));
     }
 
-    private IEnumerator CoReleaseMatchVfx(GameObject instance, float waitSeconds)
+    private IEnumerator CoReleaseVfx(GameObject instance, float waitSeconds, Match3VfxPool targetPool)
     {
         yield return new WaitForSeconds(waitSeconds);
-        if (_matchVfxPool != null && instance != null)
-            _matchVfxPool.Release(instance);
+        if (targetPool != null && instance != null)
+            targetPool.Release(instance);
+    }
+
+    private void PrewarmScoreTextPool()
+    {
+        if (scoreTextPrefab == null)
+            return;
+
+        int n = Mathf.Max(0, scoreTextPoolSize);
+        for (int i = 0; i < n; i++)
+        {
+            var go = Instantiate(scoreTextPrefab, poolRoot, false);
+            go.SetActive(false);
+            _scoreTextPool.Enqueue(go);
+        }
+    }
+
+    private void SpawnScoreText(Vector3 localPos, string text)
+    {
+        if (scoreTextPrefab == null)
+            return;
+
+        GameObject go = _scoreTextPool.Count > 0 ? _scoreTextPool.Dequeue() : Instantiate(scoreTextPrefab, poolRoot, false);
+        go.SetActive(true);
+        go.transform.SetParent(boardRoot, false);
+        go.transform.localPosition = localPos;
+        go.transform.localRotation = Quaternion.identity;
+        go.transform.localScale = Vector3.one;
+
+        var uiText = go.GetComponentInChildren<Text>(true);
+        if (uiText != null)
+            uiText.text = text;
+#if TMP_PRESENT
+        var tmpText = go.GetComponentInChildren<TMP_Text>(true);
+        if (tmpText != null)
+            tmpText.text = text;
+#endif
+
+        StartCoroutine(CoRecycleScoreText(go, scoreTextLifetime));
+    }
+
+    private IEnumerator CoRecycleScoreText(GameObject go, float wait)
+    {
+        yield return new WaitForSeconds(Mathf.Max(0.05f, wait));
+        if (go == null)
+            yield break;
+
+        go.SetActive(false);
+        go.transform.SetParent(poolRoot, false);
+        go.transform.localPosition = Vector3.zero;
+        go.transform.localRotation = Quaternion.identity;
+        go.transform.localScale = Vector3.one;
+        _scoreTextPool.Enqueue(go);
     }
 
     /// <summary>将粒子主模块 Start Color 设为 tint（含子物体上的 ParticleSystem）。</summary>
@@ -444,33 +652,26 @@ public sealed class Match3Manager : MonoBehaviour
         }
     }
 
-    private IEnumerator CoSettlePhysicsAndRefillWithVisual()
+    /// <summary>
+    /// 仅做纵向阶段：下落到稳定，若还有空位则补块并继续，直到纵向稳定且无空位。
+    /// 不做水平补全；水平阶段由上层流程单独触发。
+    /// </summary>
+    private IEnumerator CoVerticalSettleAndRefillWithVisual()
     {
         while (true)
         {
-            bool moved;
+            bool verticalMoved;
             do
             {
                 int[,] gridBefore = SnapshotGrid();
                 Match3GemView[,] cellsBefore = SnapshotCells();
-                bool v = _sim.StepVerticalGravity();
-                if (v)
+                verticalMoved = _sim.StepVerticalGravity();
+                if (verticalMoved)
                 {
                     ApplyVerticalCellMapping(cellsBefore, gridBefore);
                     yield return CoTweenGemsToLogicalCells(gravityPassDuration);
                 }
-
-                gridBefore = SnapshotGrid();
-                cellsBefore = SnapshotCells();
-                bool h = _sim.StepHorizontalCompact();
-                if (h)
-                {
-                    ApplyHorizontalCellMapping(cellsBefore, gridBefore);
-                    yield return CoTweenGemsToLogicalCells(gravityPassDuration);
-                }
-
-                moved = v || h;
-            } while (moved);
+            } while (verticalMoved);
 
             if (!_sim.HasAnyEmpty())
                 break;
@@ -673,7 +874,7 @@ public sealed class Match3Manager : MonoBehaviour
                 {
                     if (_cells[r, c] != null)
                     {
-                        _pool.Release(_cells[r, c].gameObject);
+                        ReleaseCellView(_cells[r, c].gameObject);
                         _cells[r, c] = null;
                     }
 
@@ -691,7 +892,7 @@ public sealed class Match3Manager : MonoBehaviour
 
                 if (_cells[r, c] != null)
                 {
-                    _pool.Release(_cells[r, c].gameObject);
+                    ReleaseCellView(_cells[r, c].gameObject);
                     _cells[r, c] = null;
                 }
 
@@ -811,6 +1012,12 @@ public sealed class Match3Manager : MonoBehaviour
         {
             for (int c = 0; c < Match3BoardSimulator.Size; c++)
             {
+                if (_sim.IsCellLocked(r, c))
+                {
+                    EnsureFreezeViewAt(r, c);
+                    continue;
+                }
+
                 int t = _sim.Grid[r, c];
                 var existing = _cells[r, c];
 
@@ -818,7 +1025,7 @@ public sealed class Match3Manager : MonoBehaviour
                 {
                     if (existing != null)
                     {
-                        _pool.Release(existing.gameObject);
+                        ReleaseCellView(existing.gameObject);
                         _cells[r, c] = null;
                     }
 
@@ -833,7 +1040,7 @@ public sealed class Match3Manager : MonoBehaviour
 
                 if (existing != null)
                 {
-                    _pool.Release(existing.gameObject);
+                    ReleaseCellView(existing.gameObject);
                     _cells[r, c] = null;
                 }
 
@@ -850,6 +1057,108 @@ public sealed class Match3Manager : MonoBehaviour
                 PlaceCell(go.transform, r, c);
             }
         }
+    }
+
+    private void EnsureFreezeViewAt(int row, int col)
+    {
+        var existing = _cells[row, col];
+        if (existing != null && existing.GetComponent<Match3FreezeView>() != null)
+        {
+            PlaceCell(existing.transform, row, col);
+            return;
+        }
+
+        if (existing != null)
+        {
+            ReleaseCellView(existing.gameObject);
+            _cells[row, col] = null;
+        }
+
+        if (freezePrefab == null)
+        {
+            Debug.LogError("[Match3] freezePrefab is not assigned.");
+            return;
+        }
+
+        GameObject go = GetFreezeViewInstance();
+        var view = go.GetComponent<Match3GemView>();
+        if (view == null)
+        {
+            Debug.LogError("[Match3] freezePrefab requires Match3GemView.");
+            Destroy(go);
+            return;
+        }
+
+        _cells[row, col] = view;
+        PlaceCell(go.transform, row, col);
+    }
+
+    private static bool IsFreezeView(GameObject go)
+    {
+        return go != null && go.GetComponent<Match3FreezeView>() != null;
+    }
+
+    private GameObject GetFreezeViewInstance()
+    {
+        if (_freezeViewPool.Count > 0)
+        {
+            var pooled = _freezeViewPool.Dequeue();
+            if (pooled != null)
+            {
+                pooled.SetActive(true);
+                pooled.transform.SetParent(boardRoot, false);
+                pooled.transform.localPosition = Vector3.zero;
+                pooled.transform.localRotation = Quaternion.identity;
+                pooled.transform.localScale = Vector3.one;
+                return pooled;
+            }
+        }
+
+        return Instantiate(freezePrefab, boardRoot, false);
+    }
+
+    private void ReleaseCellView(GameObject go)
+    {
+        if (go == null)
+            return;
+
+        if (IsFreezeView(go))
+        {
+            go.SetActive(false);
+            go.transform.SetParent(poolRoot, false);
+            go.transform.localPosition = Vector3.zero;
+            go.transform.localRotation = Quaternion.identity;
+            go.transform.localScale = Vector3.one;
+            _freezeViewPool.Enqueue(go);
+            return;
+        }
+
+        _pool.Release(go);
+    }
+
+    /// <summary>
+    /// 将坐标 (x,y) 置为冻结块（x=列, y=行）。冻结块不参与消除且不可移动。
+    /// </summary>
+    public void SetFreezeAt(int x, int y)
+    {
+        int row = y;
+        int col = x;
+        if ((uint)row >= Match3BoardSimulator.Size || (uint)col >= Match3BoardSimulator.Size)
+            return;
+
+        _sim.SetLocked(row, col, false);
+        if (_sim.GetCell(row, col) == 0)
+            _sim.SetCell(row, col, Match3BoardSimulator.MinType);
+        _sim.SetLocked(row, col, true);
+        EnsureFreezeViewAt(row, col);
+    }
+
+    private void SpawnTestFreezeLineAtCenter()
+    {
+        int row = Match3BoardSimulator.Size / 2;
+        int startCol = (Match3BoardSimulator.Size - 5) / 2;
+        for (int i = 0; i < 5; i++)
+            SetFreezeAt(startCol + i, row);
     }
 
     private void PlaceCell(Transform tr, int row, int col)
@@ -915,6 +1224,20 @@ public sealed class Match3Manager : MonoBehaviour
             if (gemPrefabs[i] == null) continue;
             if (gemPrefabs[i].GetComponent<Match3GemView>() == null)
                 Debug.LogWarning($"[Match3] Gem prefab at index {i} should have a Match3GemView component.");
+        }
+
+        if (freezePrefab != null)
+        {
+            if (freezePrefab.GetComponent<Match3GemView>() == null)
+                Debug.LogWarning("[Match3] freezePrefab should have a Match3GemView component.");
+            if (freezePrefab.GetComponent<Match3FreezeView>() == null)
+                Debug.LogWarning("[Match3] freezePrefab should have a Match3FreezeView component.");
+        }
+
+        if (freezeClearVfxPrefab != null)
+        {
+            if (freezeClearVfxPrefab.GetComponentInChildren<ParticleSystem>(true) == null)
+                Debug.LogWarning("[Match3] freezeClearVfxPrefab should contain at least one ParticleSystem.");
         }
     }
 

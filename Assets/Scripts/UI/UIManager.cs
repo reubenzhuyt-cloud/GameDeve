@@ -99,13 +99,19 @@ public class UIManager : MonoBehaviour
             yield break;
 
         if (sceneUIRootWakeFirst != null)
+        {
+            MakePersistent(sceneUIRootWakeFirst);
             sceneUIRootWakeFirst.SetActive(true);
+        }
 
         for (int i = 0; i < scenePanels.Count; i++)
         {
             UIScenePanelEntry e = scenePanels[i];
             if (e.root != null)
+            {
+                MakePersistent(e.root);
                 e.root.SetActive(true);
+            }
         }
 
         WakeGameplayTipHost();
@@ -122,6 +128,20 @@ public class UIManager : MonoBehaviour
         }
 
         scenePanelsPrepared = true;
+    }
+
+    /// <summary>
+    /// Move scene UI root under persistent UIManager object once, so scene switches keep references alive.
+    /// </summary>
+    private void MakePersistent(GameObject root)
+    {
+        if (root == null)
+            return;
+
+        if (root.transform.parent != transform)
+            root.transform.SetParent(transform, true);
+
+        DontDestroyOnLoad(root);
     }
 
     private void ResolveGameplayTipReference()

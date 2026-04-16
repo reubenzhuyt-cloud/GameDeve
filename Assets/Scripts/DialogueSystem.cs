@@ -52,6 +52,15 @@ public class DialogueData
 public class DialogueSystem : MonoBehaviour
 {
     public static DialogueSystem instance;
+    private static readonly string[] UnifiedActorNames =
+    {
+        "孟忘",
+        "孟婆",
+        "无主之魂",
+        "渔夫",
+        "肉包子",
+        "佃户"
+    };
     [Header("UI References")]
     [SerializeField] private GameObject dialoguePanel;
     [SerializeField] private TextMeshProUGUI actorNameUGUI;
@@ -59,18 +68,14 @@ public class DialogueSystem : MonoBehaviour
     [SerializeField] private GameObject choicePanel;
     [SerializeField] private GameObject choiceButtonPrefab;
     [Header("Actor portraits (立绘)")]
-    [Tooltip("Left-side portrait image. Assign a child under DialoguePanel; anchor to the left in the Inspector.")]
+    [Tooltip("Default portrait Image in scene. Keep it disabled initially; code only sets sprite and toggles active.")]
     [SerializeField] private Image actorPortraitImage;
-    [Tooltip("If set, sibling order uses this transform (e.g. a wrapper under DialoguePanel) instead of the Image.")]
-    [SerializeField] private RectTransform portraitHierarchyTarget;
     [Tooltip("actorId → sprite. When a node uses that actorId, the sprite is shown while they speak.")]
     [SerializeField] private List<DialogueActorPortraitEntry> actorPortraitEntries = new();
-    [Tooltip("If enabled, the portrait RectTransform is moved to sibling index 0 under its parent when shown so it draws behind sibling UI (同父节点内最底层).")]
-    [SerializeField] private bool portraitMoveToFirstSiblingWhenShown = true;
 
     [Header("Dialogue Settings")]
     [SerializeField] private float typingSpeed = 0.05f;
-    [SerializeField] public List<string> actors;
+    [SerializeField] public List<string> actors = new();
     [Header("Animation Settings")]
     [SerializeField] private List<Animator> actorAnimators = new List<Animator>();
     [SerializeField] private float animationTriggerDuration = 0.1f;
@@ -121,25 +126,23 @@ public class DialogueSystem : MonoBehaviour
         dialogueAudioSource.playOnAwake = false;
         dialogueAudioSource.loop = false;
         dialogueAudioSource.volume = dialogueVolume;
+        ApplyUnifiedActorMapping();
 
         RebuildActorPortraitLookup();
-        SetPortraitVisibilityRootActive(false);
-    }
-
-    private GameObject GetPortraitVisibilityGameObject()
-    {
-        if (portraitHierarchyTarget != null)
-            return portraitHierarchyTarget.gameObject;
         if (actorPortraitImage != null)
-            return actorPortraitImage.gameObject;
-        return null;
+            actorPortraitImage.gameObject.SetActive(false);
     }
 
-    private void SetPortraitVisibilityRootActive(bool active)
+    private void ApplyUnifiedActorMapping()
     {
-        GameObject vis = GetPortraitVisibilityGameObject();
-        if (vis != null)
-            vis.SetActive(active);
+        actors = new List<string>(UnifiedActorNames);
+    }
+
+    private static string GetUnifiedActorName(int actorId)
+    {
+        if (actorId < 0 || actorId >= UnifiedActorNames.Length)
+            return "Unknown Actor";
+        return UnifiedActorNames[actorId];
     }
 
     private void RebuildActorPortraitLookup()
@@ -254,39 +257,26 @@ public class DialogueSystem : MonoBehaviour
 
         if (!visible)
         {
-            SetPortraitVisibilityRootActive(false);
+            actorPortraitImage.gameObject.SetActive(false);
             return;
         }
 
         if (!actorPortraitLookup.TryGetValue(actorId, out Sprite sprite) || sprite == null)
         {
-            SetPortraitVisibilityRootActive(false);
+            actorPortraitImage.gameObject.SetActive(false);
             return;
-        }
-
-        if (portraitMoveToFirstSiblingWhenShown)
-        {
-            RectTransform orderTarget = portraitHierarchyTarget != null ? portraitHierarchyTarget : actorPortraitImage.rectTransform;
-            orderTarget.SetAsFirstSibling();
         }
 
         actorPortraitImage.sprite = sprite;
         actorPortraitImage.preserveAspect = true;
-        SetPortraitVisibilityRootActive(true);
+        actorPortraitImage.gameObject.SetActive(true);
     }
 
     private void ShowNormalNode()
     {
         if (actorNameUGUI != null)
         {
-            if (currentNode.actorId >= actors.Count)
-            {
-                actorNameUGUI.text = "Unknown Actor";
-            }
-            else
-            {
-                actorNameUGUI.text = actors[currentNode.actorId];
-            }
+            actorNameUGUI.text = GetUnifiedActorName(currentNode.actorId);
         }
 
         ApplyActorPortraitForLine(currentNode.actorId, true);

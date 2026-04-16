@@ -150,12 +150,14 @@
   const LS_KEY = 'dialogue_editor_v2';
   const SNAP = 16;
 
-  /** 与 BaiYunPu_Day 场景 DialogueSystem.actors 下标一致；导出 JSON 仍只写 actorId 数字 */
+  /** 与 DialogueSystem 统一映射一致；导出 JSON 仍只写 actorId 数字 */
   const ACTOR_OPTIONS = [
-    { id: 0, name: '玩家' },
-    { id: 1, name: '渔夫' },
-    { id: 2, name: '肉包子' },
-    { id: 3, name: '佃户' },
+    { id: 0, name: '孟忘' },
+    { id: 1, name: '孟婆' },
+    { id: 2, name: '无主之魂' },
+    { id: 3, name: '渔夫' },
+    { id: 4, name: '肉包子' },
+    { id: 5, name: '佃户' },
   ];
 
   function actorLabel(actorId) {
@@ -526,9 +528,9 @@
     persist();
   }
 
-  function createBranchAndWire(from, pos) {
-    const fromNode = state.nodes[from];
-    if (!fromNode || fromNode.isChoiceNode) return;
+  function createChoiceAndWire(conn, pos) {
+    const fromNode = state.nodes[conn.from];
+    if (!fromNode) return;
     const p = snapPos(pos.x, pos.y);
     const newIdx = state.nodes.length;
     state.nodes.push({
@@ -541,59 +543,43 @@
       actorSet: false,
       pos: { x: p.x, y: p.y },
     });
-    state.nodes[from].nextIndex = newIdx;
+    if (conn.kind === 'line') {
+      state.nodes[conn.from].nextIndex = newIdx;
+    } else if (conn.kind === 'choice' && conn.ci != null) {
+      const ch = state.nodes[conn.from].choices;
+      if (ch && ch[conn.ci]) ch[conn.ci].targetIndex = newIdx;
+    }
     state.sel = newIdx;
     pushUndo();
     persist();
-    toast('已新建分支并连接');
+    toast('已新建选择并连接');
   }
 
-  /** 从台词节点拉出：新建空台词并接上 next */
-  function createEmptyLineAndWire(from, pos) {
-    const fromNode = state.nodes[from];
-    if (!fromNode || fromNode.isChoiceNode) return;
-    const p = snapPos(pos.x, pos.y);
-    const newIdx = state.nodes.length;
-    state.nodes.push({
-      actorId: 0,
-      dialogueText: '',
-      isChoiceNode: false,
-      animationTrigger: '',
-      nextIndex: -1,
-      choices: null,
-      actorSet: false,
-      pos: { x: p.x, y: p.y },
-    });
-    state.nodes[from].nextIndex = newIdx;
-    state.sel = newIdx;
-    pushUndo();
-    persist();
-    toast('已新建空台词并连接');
-  }
-
-  function createLineAndWire(conn, pos) {
+  function createDialogueAndWire(conn, pos, actorId) {
     const fromNode = state.nodes[conn.from];
-    if (!fromNode || !fromNode.isChoiceNode) return;
+    if (!fromNode) return;
     const p = snapPos(pos.x, pos.y);
-    const from = conn.from;
-    const ci = conn.ci;
     const newIdx = state.nodes.length;
     state.nodes.push({
-      actorId: 0,
+      actorId: actorId,
       dialogueText: '',
       isChoiceNode: false,
       animationTrigger: '',
       nextIndex: -1,
       choices: null,
-      actorSet: false,
+      actorSet: true,
       pos: { x: p.x, y: p.y },
     });
-    const ch = state.nodes[from].choices;
-    if (ch && ci != null && ch[ci]) ch[ci].targetIndex = newIdx;
+    if (conn.kind === 'line') {
+      state.nodes[conn.from].nextIndex = newIdx;
+    } else if (conn.kind === 'choice' && conn.ci != null) {
+      const ch = state.nodes[conn.from].choices;
+      if (ch && ch[conn.ci]) ch[conn.ci].targetIndex = newIdx;
+    }
     state.sel = newIdx;
     pushUndo();
     persist();
-    toast('已新建台词并连接');
+    toast('已新建对话并连接');
   }
 
   function openConnectTargetModal(conn, clientX, clientY) {
@@ -609,64 +595,70 @@
     const b1 = document.createElement('button');
     b1.type = 'button';
     b1.className = 'opt primary';
-    if (conn.kind === 'line') {
-      b1.innerHTML = '<span class="tag">1.</span> 新建分支节点（选择）';
-      b1.onclick = () => {
-        closeConnectModal();
-        createBranchAndWire(conn.from, drop);
-        renderAll();
-      };
-    } else {
-      b1.innerHTML = '<span class="tag">1.</span> 新建台词节点（空）';
-      b1.onclick = () => {
-        closeConnectModal();
-        createLineAndWire(conn, drop);
-        renderAll();
-      };
-    }
+    b1.innerHTML = '<span class="tag">1.</span> 选择';
+    b1.onclick = () => {
+      closeConnectModal();
+      createChoiceAndWire(conn, drop);
+      renderAll();
+    };
     opts.appendChild(b1);
 
-    if (conn.kind === 'line') {
-      const b2 = document.createElement('button');
-      b2.type = 'button';
-      b2.className = 'opt primary';
-      b2.innerHTML = '<span class="tag">2.</span> 新建空台词节点（接续下一句）';
-      b2.onclick = () => {
-        closeConnectModal();
-        createEmptyLineAndWire(conn.from, drop);
-        renderAll();
+    const b2 = document.createElement('button');
+    b2.type = 'button';
+    b2.className = 'opt';
+    b2.innerHTML = '<span class="tag">2.</span> 对话';
+    b2.onclick = () => {
+      closeConnectModal();
+      createDialogueAndWire(conn, drop, priorRoles.length ? selectedActorId : defaultActorId);
+      renderAll();
+    };
+    opts.appendChild(b2);
+
+    const priorRoles = Array.from(
+      new Set(
+        priorLineNodesWithActor(conn.from).map((idx) => state.nodes[idx].actorId)
+      )
+    );
+    const defaultActorId = 0;
+    let selectedActorId = priorRoles.length ? priorRoles[0] : defaultActorId;
+
+    if (priorRoles.length) {
+      const wrapSel = document.createElement('div');
+      wrapSel.style.margin = '6px 0 10px';
+      wrapSel.innerHTML = `
+        <label style="display:block;font-size:11px;color:#8b92a8;margin-bottom:4px;">对话角色分类（前序已出现）</label>
+        <select id="modalActorSelect" style="width:100%;padding:8px;border-radius:6px;border:1px solid #2a3145;background:#121520;color:#e8e8ec;font-size:12px;">
+          ${priorRoles.map((actorId) => `<option value="${actorId}">${escapeHtml(actorLabel(actorId))}</option>`).join('')}
+        </select>`;
+      opts.appendChild(wrapSel);
+      const sel = wrapSel.querySelector('#modalActorSelect');
+      sel.onchange = () => {
+        selectedActorId = +sel.value;
+        createDialogueBtn.innerHTML = `<span class="tag">2.1</span> 创建对话（${escapeHtml(actorLabel(selectedActorId))}）`;
       };
-      opts.appendChild(b2);
     }
 
-    const priors = priorLineNodesWithActor(conn.from);
-    const priorBase = conn.kind === 'line' ? 3 : 2;
-    if (!priors.length) {
+    const createDialogueBtn = document.createElement('button');
+    createDialogueBtn.type = 'button';
+    createDialogueBtn.className = 'opt primary';
+    createDialogueBtn.style.marginTop = priorRoles.length ? '0' : '8px';
+    createDialogueBtn.innerHTML = priorRoles.length
+      ? `<span class="tag">2.1</span> 创建对话（${escapeHtml(actorLabel(selectedActorId))}）`
+      : `<span class="tag">2.1</span> 创建默认对话（${escapeHtml(actorLabel(defaultActorId))}）`;
+    createDialogueBtn.onclick = () => {
+      closeConnectModal();
+      createDialogueAndWire(conn, drop, priorRoles.length ? selectedActorId : defaultActorId);
+      renderAll();
+    };
+    opts.appendChild(createDialogueBtn);
+
+    if (!priorRoles.length) {
       const tip = document.createElement('p');
       tip.className = 'sub';
-      tip.style.marginTop = '4px';
-      tip.textContent = conn.kind === 'line'
-        ? '暂无已选角色的前序节点；可用 2 先接空台词。在前序节点选好角色后会出现 ' + priorBase + '、' + (priorBase + 1) + '…'
-        : '暂无已选角色的前序节点；选项 1 已会新建空台词。选好角色后出现 ' + priorBase + '、' + (priorBase + 1) + '…';
+      tip.style.marginTop = '6px';
+      tip.textContent = '暂无前序角色分类，已按默认角色创建。';
       opts.appendChild(tip);
     }
-
-    priors.forEach((idx, n) => {
-      const node = state.nodes[idx];
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'opt';
-      const num = priorBase + n;
-      const snip = (node.dialogueText || '').trim().slice(0, 36) || '（无文本）';
-      btn.innerHTML = `<span class="tag">${num}.</span> [${idx}] ${escapeHtml(actorLabel(node.actorId))} · ${escapeHtml(snip)}`;
-      btn.onclick = () => {
-        closeConnectModal();
-        applyWire(conn, idx);
-        renderAll();
-        toast('已连接到 [' + idx + ']');
-      };
-      opts.appendChild(btn);
-    });
 
     $('modalBg').classList.add('on');
     $('modalBg').setAttribute('aria-hidden', 'false');
@@ -935,7 +927,15 @@
   }
 
   /** ---------- 交互 ---------- */
-  canvas.addEventListener('mousedown', (e) => {
+  wrap.addEventListener('mousedown', (e) => {
+    // Left mouse button only for canvas interactions.
+    if (e.button !== 0) return;
+
+    // If a modal is open, prevent hidden-state interference with drag/connection.
+    if ($('modalBg').classList.contains('on')) {
+      closeConnectModal();
+    }
+
     const t = /** @type {HTMLElement} */ (e.target);
     const nodeEl = t.closest('.node');
     const pr = t.closest('.port-out, .port-ch');
@@ -949,6 +949,8 @@
       return;
     }
     if (nodeEl) {
+      // Starting node drag should cancel any stale connection preview state.
+      state.connect = null;
       const i = +nodeEl.dataset.i;
       state.sel = i;
       const n = state.nodes[i];
@@ -956,7 +958,8 @@
       e.preventDefault();
       return;
     }
-    if (!pin) {
+    // Left-click blank area: pan canvas.
+    if (!nodeEl && !pr && !pin) {
       state.pan = { x: e.clientX, y: e.clientY };
       state.sel = -1;
     }

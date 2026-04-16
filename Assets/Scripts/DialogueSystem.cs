@@ -5,6 +5,16 @@ using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Collections;
 
+/// <summary>
+/// Maps <see cref="DialogueNodeData.actorId"/> to a portrait sprite for dialogue UI.
+/// </summary>
+[System.Serializable]
+public class DialogueActorPortraitEntry
+{
+    public int actorId;
+    public Sprite portraitSprite;
+}
+
 [System.Serializable]
 public class DialogueNodeData
 {
@@ -48,6 +58,16 @@ public class DialogueSystem : MonoBehaviour
     [SerializeField] private TextMeshProUGUI dialogueUGUI;
     [SerializeField] private GameObject choicePanel;
     [SerializeField] private GameObject choiceButtonPrefab;
+    [Header("Actor portraits (立绘)")]
+    [Tooltip("Left-side portrait image. Assign a child under DialoguePanel; anchor to the left in the Inspector.")]
+    [SerializeField] private Image actorPortraitImage;
+    [Tooltip("If set, sibling order uses this transform (e.g. a wrapper under DialoguePanel) instead of the Image.")]
+    [SerializeField] private RectTransform portraitHierarchyTarget;
+    [Tooltip("actorId → sprite. When a node uses that actorId, the sprite is shown while they speak.")]
+    [SerializeField] private List<DialogueActorPortraitEntry> actorPortraitEntries = new();
+    [Tooltip("If enabled, the portrait RectTransform is moved to sibling index 0 under its parent when shown so it draws behind sibling UI (同父节点内最底层).")]
+    [SerializeField] private bool portraitMoveToFirstSiblingWhenShown = true;
+
     [Header("Dialogue Settings")]
     [SerializeField] private float typingSpeed = 0.05f;
     [SerializeField] public List<string> actors;
@@ -67,6 +87,7 @@ public class DialogueSystem : MonoBehaviour
     private Coroutine animationCoroutine;
     private ConditionManager conditionManager;
     private AudioSource dialogueAudioSource;
+    private Dictionary<int, Sprite> actorPortraitLookup = new();
 
     public UnityEvent<DialogueData> onDialogueEnd = new();
     public UnityEvent<DialogueData> onDialogueStart = new();
@@ -100,6 +121,36 @@ public class DialogueSystem : MonoBehaviour
         dialogueAudioSource.playOnAwake = false;
         dialogueAudioSource.loop = false;
         dialogueAudioSource.volume = dialogueVolume;
+
+        RebuildActorPortraitLookup();
+        SetPortraitVisibilityRootActive(false);
+    }
+
+    private GameObject GetPortraitVisibilityGameObject()
+    {
+        if (portraitHierarchyTarget != null)
+            return portraitHierarchyTarget.gameObject;
+        if (actorPortraitImage != null)
+            return actorPortraitImage.gameObject;
+        return null;
+    }
+
+    private void SetPortraitVisibilityRootActive(bool active)
+    {
+        GameObject vis = GetPortraitVisibilityGameObject();
+        if (vis != null)
+            vis.SetActive(active);
+    }
+
+    private void RebuildActorPortraitLookup()
+    {
+        actorPortraitLookup.Clear();
+        foreach (var entry in actorPortraitEntries)
+        {
+            if (entry == null || entry.portraitSprite == null)
+                continue;
+            actorPortraitLookup[entry.actorId] = entry.portraitSprite;
+        }
     }
 
     private void Start()
@@ -193,6 +244,37 @@ public class DialogueSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Shows or hides the left portrait for the current <paramref name="actorId"/> when they have a mapped sprite.
+    /// </summary>
+    private void ApplyActorPortraitForLine(int actorId, bool visible)
+    {
+        if (actorPortraitImage == null)
+            return;
+
+        if (!visible)
+        {
+            SetPortraitVisibilityRootActive(false);
+            return;
+        }
+
+        if (!actorPortraitLookup.TryGetValue(actorId, out Sprite sprite) || sprite == null)
+        {
+            SetPortraitVisibilityRootActive(false);
+            return;
+        }
+
+        if (portraitMoveToFirstSiblingWhenShown)
+        {
+            RectTransform orderTarget = portraitHierarchyTarget != null ? portraitHierarchyTarget : actorPortraitImage.rectTransform;
+            orderTarget.SetAsFirstSibling();
+        }
+
+        actorPortraitImage.sprite = sprite;
+        actorPortraitImage.preserveAspect = true;
+        SetPortraitVisibilityRootActive(true);
+    }
+
     private void ShowNormalNode()
     {
         if (actorNameUGUI != null)
@@ -206,6 +288,8 @@ public class DialogueSystem : MonoBehaviour
                 actorNameUGUI.text = actors[currentNode.actorId];
             }
         }
+
+        ApplyActorPortraitForLine(currentNode.actorId, true);
         if (choicePanel != null)
         {
             if (UIManager.instance != null)
@@ -222,6 +306,8 @@ public class DialogueSystem : MonoBehaviour
 
     private void ShowChoiceNode()
     {
+        ApplyActorPortraitForLine(0, false);
+
         if (actorNameUGUI != null)
         {
             actorNameUGUI.text = "Choice";
@@ -381,6 +467,7 @@ public class DialogueSystem : MonoBehaviour
 
         StopCurrentAnimation();
         StopDialogueAudio();
+        ApplyActorPortraitForLine(0, false);
 
         if (dialoguePanel != null)
         {

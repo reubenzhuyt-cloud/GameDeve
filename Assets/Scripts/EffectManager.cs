@@ -2,13 +2,14 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// 拖入粒子特效 Prefab。Play(duration) 用协程：生成实例 → 每帧跟玩家 → 时间到停粒子并 Destroy。
+/// 单例：拖入 LightEffect 等粒子 Prefab（不要挂在 Player 上）。
+/// Play(duration)：实例化 → 每帧跟随玩家 → 到时销毁。由 PlayerLightState 调用。
 /// </summary>
 public class EffectManager : MonoBehaviour
 {
     public static EffectManager instance { get; private set; }
 
-    [Header("粒子特效预制体（根物体上可有 ParticleSystem，或在子物体上）")]
+    [Header("光效预制体（例：Assets/Perfabs/LightEffect）")]
     [SerializeField] private GameObject particleEffectPrefab;
 
     private Coroutine playRoutine;

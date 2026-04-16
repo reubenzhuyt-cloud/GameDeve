@@ -33,10 +33,10 @@ public class Player : Entity
     public PlayerAttackCounterState attackCounter { get; private set; }
     public PlayerLightState lightState { get; private set; }
     
-    [Header("Light Skill Settings")]
+    [Header("Light Skill（光效 Prefab 挂在场景 EffectManager，勿挂 Player）")]
     [Tooltip("按键冷却（秒），可给 UI 读")]
     public float lightSkillCD = 5f;
-    [Tooltip("光效与 Light 状态持续时间（秒），与粒子播放时长一致")]
+    [Tooltip("光效持续时间（秒）。预制体在 EffectManager.Particle Effect Prefab（如场景物体 2DEffect），由 PlayerLightState 调 EffectManager.Play 生成并跟随玩家")]
     public float lightSkillEffectDuration = 3f;
     [Tooltip("剩余冷却，运行时递减，可给 UI 读")]
     public float lightSkillTimer;

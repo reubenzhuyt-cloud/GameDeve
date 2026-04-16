@@ -253,12 +253,22 @@ MonoBehaviour:
   boardCollider: {fileID: 0}
   dragCommitThreshold: 0.22
   dragMaxPull: 0.45
+  dragScaleDeadZone: 0.06
   dragSelectedScale: 1.12
+  dragSelectedScaleMax: 1.18
   dragNeighborScale: 0.82
   swapAnimDuration: 0.1
   afterClearPause: 0.2
   afterSettlePause: 0.2
   revertAnimDuration: 0.12
+  matchClearVfxPrefab: {fileID: 8980093574620554071, guid: 6c11fb3aecf08e543b101e8722640227, type: 3}
+  matchClearVfxPoolSize: 12
+  eliminationShrinkDuration: 0.18
+  matchVfxReleasePadding: 0.08
+  matchVfxRecycleMaxSeconds: 8
+  gravityPassDuration: 0.09
+  newGemFallDuration: 0.14
+  gravityFallHeightFactor: 0.55
 --- !u!4 &2129765854
 Transform:
   m_ObjectHideFlags: 0

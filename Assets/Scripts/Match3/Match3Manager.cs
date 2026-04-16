@@ -51,7 +51,7 @@ public sealed class Match3Manager : MonoBehaviour
     [Header("Gravity visual (after each sim step)")]
     [SerializeField] private float gravityPassDuration = 0.09f;
     [SerializeField] private float newGemFallDuration = 0.14f;
-    [Tooltip("下落起点相对格心向上偏移 ≈ cellSize × 因子 × (越靠上越大)")]
+    [Tooltip("仅新补块：从目标格心向上偏移 ≈ cellSize × 该因子再落到格心（盘面内已有棋子从当前位置落到目标）")]
     [SerializeField] private float gravityFallHeightFactor = 0.55f;
 
     private Match3BoardSimulator _sim;
@@ -451,27 +451,42 @@ public sealed class Match3Manager : MonoBehaviour
             bool moved;
             do
             {
+                int[,] gridBefore = SnapshotGrid();
+                Match3GemView[,] cellsBefore = SnapshotCells();
                 bool v = _sim.StepVerticalGravity();
-                bool h = _sim.StepHorizontalCompact();
-                moved = v || h;
-                if (!moved)
-                    break;
+                if (v)
+                {
+                    ApplyVerticalCellMapping(cellsBefore, gridBefore);
+                    yield return CoTweenGemsToLogicalCells(gravityPassDuration);
+                }
 
-                SyncFromGrid();
-                yield return CoGravityPassVisual(gravityPassDuration);
+                gridBefore = SnapshotGrid();
+                cellsBefore = SnapshotCells();
+                bool h = _sim.StepHorizontalCompact();
+                if (h)
+                {
+                    ApplyHorizontalCellMapping(cellsBefore, gridBefore);
+                    yield return CoTweenGemsToLogicalCells(gravityPassDuration);
+                }
+
+                moved = v || h;
             } while (moved);
 
             if (!_sim.HasAnyEmpty())
                 break;
 
+            int[,] gridSnapshot = SnapshotGrid();
+            Match3GemView[,] cellsSnapshot = SnapshotCells();
             _sim.RefillEmptyCells();
-            SyncFromGrid();
-            yield return CoGravityPassVisual(newGemFallDuration);
+            BuildCellsAfterRefill(cellsSnapshot, gridSnapshot);
+            yield return CoTweenGemsToLogicalCells(newGemFallDuration);
         }
     }
 
-    private IEnumerator CoGravityPassVisual(float duration)
+    /// <summary>仅对「当前 localPosition 与逻辑格不一致」的棋子插值到格心（从当前位置落到目标，不整盘从上方放下）。</summary>
+    private IEnumerator CoTweenGemsToLogicalCells(float duration)
     {
+        const float eps = 1e-8f;
         var items = new List<(Transform tr, Vector3 start, Vector3 end, int row, int col)>();
         for (int r = 0; r < Match3BoardSimulator.Size; r++)
         {
@@ -482,11 +497,11 @@ public sealed class Match3Manager : MonoBehaviour
 
                 Transform tr = v.transform;
                 Vector3 end = CellLocalPosition(r, c);
-                float rowT = (Match3BoardSimulator.Size - r) / (float)Match3BoardSimulator.Size;
-                float lift = cellSize * gravityFallHeightFactor * (rowT + 0.12f);
-                Vector3 start = end + Vector3.up * lift;
+                Vector3 start = tr.localPosition;
+                if ((start - end).sqrMagnitude < eps)
+                    continue;
+
                 items.Add((tr, start, end, r, c));
-                tr.localPosition = start;
             }
         }
 
@@ -501,6 +516,204 @@ public sealed class Match3Manager : MonoBehaviour
 
         foreach (var (tr, _, _, row, col) in items)
             PlaceCell(tr, row, col);
+    }
+
+    private static int[,] SnapshotGrid(Match3BoardSimulator sim)
+    {
+        int n = Match3BoardSimulator.Size;
+        var g = new int[n, n];
+        for (int r = 0; r < n; r++)
+            for (int c = 0; c < n; c++)
+                g[r, c] = sim.Grid[r, c];
+        return g;
+    }
+
+    private int[,] SnapshotGrid() => SnapshotGrid(_sim);
+
+    private Match3GemView[,] SnapshotCells()
+    {
+        int n = Match3BoardSimulator.Size;
+        var a = new Match3GemView[n, n];
+        for (int r = 0; r < n; r++)
+            for (int c = 0; c < n; c++)
+                a[r, c] = _cells[r, c];
+        return a;
+    }
+
+    /// <summary>与 <see cref="Match3BoardSimulator"/> 列栈顺序一致：自下而上收集可动棋子，再写入自下而上的非空目标格。</summary>
+    private void ApplyVerticalCellMapping(Match3GemView[,] beforeCells, int[,] beforeGrid)
+    {
+        int n = Match3BoardSimulator.Size;
+        for (int c = 0; c < n; c++)
+        {
+            var stack = new List<(int fromR, Match3GemView gem)>();
+            for (int r = n - 1; r >= 0; r--)
+            {
+                if (_sim.IsCellLocked(r, c))
+                    continue;
+                if (beforeGrid[r, c] == 0)
+                    continue;
+                Match3GemView g = beforeCells[r, c];
+                if (g == null)
+                    continue;
+                stack.Add((r, g));
+            }
+
+            var targetRows = new List<int>();
+            for (int r = n - 1; r >= 0; r--)
+            {
+                if (_sim.IsCellLocked(r, c))
+                    continue;
+                if (_sim.GetCell(r, c) == 0)
+                    continue;
+                targetRows.Add(r);
+            }
+
+            for (int r = 0; r < n; r++)
+            {
+                if (_sim.IsCellLocked(r, c))
+                    continue;
+                _cells[r, c] = null;
+            }
+
+            for (int r = 0; r < n; r++)
+            {
+                if (!_sim.IsCellLocked(r, c))
+                    continue;
+                _cells[r, c] = beforeCells[r, c];
+            }
+
+            if (stack.Count != targetRows.Count)
+            {
+                Debug.LogError($"[Match3] Vertical column {c} stack/target count mismatch ({stack.Count}/{targetRows.Count}). Snapping.");
+                SyncFromGrid();
+                return;
+            }
+
+            for (int i = 0; i < stack.Count; i++)
+            {
+                int toR = targetRows[i];
+                Match3GemView gem = stack[i].gem;
+                _cells[toR, c] = gem;
+                gem.Setup(_sim.GetCell(toR, c));
+            }
+        }
+    }
+
+    /// <summary>与模拟器行内左紧凑顺序一致：自左而右收集可动棋子，再写入自左而非空目标列。</summary>
+    private void ApplyHorizontalCellMapping(Match3GemView[,] beforeCells, int[,] beforeGrid)
+    {
+        int n = Match3BoardSimulator.Size;
+        for (int r = 0; r < n; r++)
+        {
+            var stack = new List<(int fromC, Match3GemView gem)>();
+            for (int c = 0; c < n; c++)
+            {
+                if (_sim.IsCellLocked(r, c))
+                    continue;
+                if (beforeGrid[r, c] == 0)
+                    continue;
+                Match3GemView g = beforeCells[r, c];
+                if (g == null)
+                    continue;
+                stack.Add((c, g));
+            }
+
+            var targetCols = new List<int>();
+            for (int c = 0; c < n; c++)
+            {
+                if (_sim.IsCellLocked(r, c))
+                    continue;
+                if (_sim.GetCell(r, c) == 0)
+                    continue;
+                targetCols.Add(c);
+            }
+
+            for (int c = 0; c < n; c++)
+            {
+                if (_sim.IsCellLocked(r, c))
+                    continue;
+                _cells[r, c] = null;
+            }
+
+            for (int c = 0; c < n; c++)
+            {
+                if (!_sim.IsCellLocked(r, c))
+                    continue;
+                _cells[r, c] = beforeCells[r, c];
+            }
+
+            if (stack.Count != targetCols.Count)
+            {
+                Debug.LogError($"[Match3] Horizontal row {r} stack/target count mismatch ({stack.Count}/{targetCols.Count}). Snapping.");
+                SyncFromGrid();
+                return;
+            }
+
+            for (int i = 0; i < stack.Count; i++)
+            {
+                int toC = targetCols[i];
+                Match3GemView gem = stack[i].gem;
+                _cells[r, toC] = gem;
+                gem.Setup(_sim.GetCell(r, toC));
+            }
+        }
+    }
+
+    /// <summary>补块后：原非空格沿用原视图；新出现的类型从池取出并从格心上方落下。</summary>
+    private void BuildCellsAfterRefill(Match3GemView[,] cellsBefore, int[,] gridBefore)
+    {
+        int n = Match3BoardSimulator.Size;
+        for (int r = 0; r < n; r++)
+        {
+            for (int c = 0; c < n; c++)
+            {
+                int t = _sim.GetCell(r, c);
+                if (t == 0)
+                {
+                    if (_cells[r, c] != null)
+                    {
+                        _pool.Release(_cells[r, c].gameObject);
+                        _cells[r, c] = null;
+                    }
+
+                    continue;
+                }
+
+                if (gridBefore[r, c] != 0)
+                {
+                    Match3GemView keep = cellsBefore[r, c];
+                    _cells[r, c] = keep;
+                    if (keep != null)
+                        keep.Setup(t);
+                    continue;
+                }
+
+                if (_cells[r, c] != null)
+                {
+                    _pool.Release(_cells[r, c].gameObject);
+                    _cells[r, c] = null;
+                }
+
+                GameObject go = _pool.Get(t);
+                if (go == null)
+                {
+                    Debug.LogError($"[Match3] Missing prefab for gem type {t}.");
+                    continue;
+                }
+
+                go.transform.SetParent(boardRoot, false);
+                var view = go.GetComponent<Match3GemView>();
+                _cells[r, c] = view;
+                view.Setup(t);
+                Vector3 end = CellLocalPosition(r, c);
+                float rowT = (Match3BoardSimulator.Size - r) / (float)Match3BoardSimulator.Size;
+                float lift = cellSize * gravityFallHeightFactor * (rowT + 0.12f);
+                go.transform.localPosition = end + Vector3.up * lift;
+                go.transform.localRotation = Quaternion.identity;
+                go.transform.localScale = Vector3.one;
+            }
+        }
     }
 
     /// <summary>与输入/UI 无关：原子 TrySwap + Sync（供测试或跳过动画的路径）。</summary>

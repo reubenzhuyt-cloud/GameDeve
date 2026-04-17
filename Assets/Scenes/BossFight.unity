@@ -370,8 +370,8 @@ Transform:
   m_GameObject: {fileID: 1316970433}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.51, y: -2.17, z: 742.5244}
-  m_LocalScale: {x: 0.28, y: 0.28, z: 0.28}
+  m_LocalPosition: {x: -5.75, y: -2.25, z: 742.5244}
+  m_LocalScale: {x: 0.29, y: 0.29, z: 0.29}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -391,9 +391,11 @@ MonoBehaviour:
   hitCollider2D: {fileID: 1316970437}
   spriteRenderers: []
   uiImages: []
-  flashCount: 4
+  flashCount: 6
   flashHalfPeriod: 0.06
-  shakeAmount: 0.035
+  shakeDurationSeconds: 0.45
+  shakeWavePeriodSeconds: 0.14
+  shakeAmplitudeCoefficient: 0.22
 --- !u!61 &1316970437
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -597,7 +599,7 @@ Transform:
   m_GameObject: {fileID: 2129765852}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.95, y: 0.11, z: 0.006005943}
+  m_LocalPosition: {x: 3.95, y: -0.06, z: 0.006005943}
   m_LocalScale: {x: 0.8875, y: 0.8875, z: 0.8875}
   m_ConstrainProportionsScale: 1
   m_Children: []

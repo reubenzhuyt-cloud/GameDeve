@@ -1,11 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-using UnityEngine.UI;
-#if TMP_PRESENT
-using TMPro;
-#endif
 
 /// <summary>
 /// 三消表现层：数组逻辑在 <see cref="Match3BoardSimulator"/>。
@@ -14,6 +11,8 @@ using TMPro;
 /// </summary>
 public sealed class Match3Manager : MonoBehaviour
 {
+    public event Action<int, int> OnEliminationDamage;
+
     [Header("Prefabs (5 colors, index 0 = type 1)")]
     [SerializeField] private GameObject[] gemPrefabs = new GameObject[5];
     [SerializeField] private GameObject freezePrefab;
@@ -56,9 +55,18 @@ public sealed class Match3Manager : MonoBehaviour
     [Tooltip("回收等待 = 估算播放时长 + 该值；并受「最长回收等待」限制")]
     [SerializeField] private float matchVfxReleasePadding = 0.08f;
     [SerializeField] private float matchVfxRecycleMaxSeconds = 8f;
+    [Header("Elimination score (linear)")]
+    [Tooltip("该颜色在一次消除中合计格数 = 3 时的得分")]
+    [SerializeField] private int eliminationScoreAt3 = 3;
+    [Tooltip("该颜色在一次消除中合计格数 = 8 时的得分；3~8 之间线性插值，>8 按同斜率外推")]
+    [SerializeField] private int eliminationScoreAt8 = 18;
     [SerializeField] private GameObject scoreTextPrefab;
     [SerializeField] private int scoreTextPoolSize = 16;
     [SerializeField] private float scoreTextLifetime = 0.9f;
+    [SerializeField] private float scoreTextScaleFactor = 0.2f;
+
+    [Header("Damage fly swarm (optional)")]
+    [SerializeField] private Match3DamageSwarmManager damageSwarm;
 
     [Header("Gravity visual (after each sim step)")]
     [SerializeField] private float gravityPassDuration = 0.09f;
@@ -71,7 +79,7 @@ public sealed class Match3Manager : MonoBehaviour
     private Match3VfxPool _matchVfxPool;
     private Match3VfxPool _freezeVfxPool;
     private readonly Queue<GameObject> _freezeViewPool = new Queue<GameObject>();
-    private readonly Queue<GameObject> _scoreTextPool = new Queue<GameObject>();
+    private readonly Queue<Match3ScoreTextView> _scoreTextPool = new Queue<Match3ScoreTextView>();
     private readonly int[] _colorScores = new int[Match3BoardSimulator.MaxType + 1];
     private Match3GemView[,] _cells;
 
@@ -419,6 +427,8 @@ public sealed class Match3Manager : MonoBehaviour
         {
             if (_sim.IsCellLocked(r, c))
                 continue;
+            if (damageSwarm != null)
+                damageSwarm.SpawnOrbAtBoardLocal(CellLocalPosition(r, c), scoreTextScaleFactor);
             var gem = _cells[r, c];
             int type = _sim.GetCell(r, c);
             if (type >= Match3BoardSimulator.MinType && type <= Match3BoardSimulator.MaxType)
@@ -474,6 +484,7 @@ public sealed class Match3Manager : MonoBehaviour
                 continue;
 
             _colorScores[type] += add;
+            OnEliminationDamage?.Invoke(add, type);
             Vector3 p = colorPosSums[type] / cnt;
             SpawnScoreText(p, $"+{add}");
         }
@@ -481,13 +492,26 @@ public sealed class Match3Manager : MonoBehaviour
         LogColorScores();
     }
 
-    private static int ScoreFromEliminationCount(int count)
+    /// <summary>3 连以下 0 分；3~8 在 <see cref="eliminationScoreAt3"/> 与 <see cref="eliminationScoreAt8"/> 间线性；更大消除按同斜率继续加分。</summary>
+    private int ScoreFromEliminationCount(int count)
     {
-        if (count >= 7) return 10;
-        if (count == 5) return 7;
-        if (count == 4) return 5;
-        if (count == 3) return 3;
-        return 0;
+        if (count < 3)
+            return 0;
+
+        int lo = eliminationScoreAt3;
+        int hi = eliminationScoreAt8;
+        if (hi < lo)
+            (lo, hi) = (hi, lo);
+
+        const int span = 8 - 3;
+        float step = (hi - lo) / (float)span;
+        int s = count <= 8
+            ? Mathf.RoundToInt(lo + (count - 3) * step)
+            : Mathf.RoundToInt(hi + (count - 8) * step);
+        // 三连至少应有分，否则 +分飘字会被跳过；若 Inspector 把两端都配成 0，这里兜底为 1
+        if (s < 1)
+            return 1;
+        return s;
     }
 
     private void LogColorScores()
@@ -599,8 +623,11 @@ public sealed class Match3Manager : MonoBehaviour
         for (int i = 0; i < n; i++)
         {
             var go = Instantiate(scoreTextPrefab, poolRoot, false);
+            var view = go.GetComponent<Match3ScoreTextView>();
+            if (view == null)
+                view = go.AddComponent<Match3ScoreTextView>();
             go.SetActive(false);
-            _scoreTextPool.Enqueue(go);
+            _scoreTextPool.Enqueue(view);
         }
     }
 
@@ -609,22 +636,23 @@ public sealed class Match3Manager : MonoBehaviour
         if (scoreTextPrefab == null)
             return;
 
-        GameObject go = _scoreTextPool.Count > 0 ? _scoreTextPool.Dequeue() : Instantiate(scoreTextPrefab, poolRoot, false);
-        go.SetActive(true);
+        Match3ScoreTextView view = _scoreTextPool.Count > 0
+            ? _scoreTextPool.Dequeue()
+            : CreateScoreTextViewInstance();
+        GameObject go = view.gameObject;
+        // 顺序：创建/取出 -> 写入文本 -> 激活 -> 定时休眠回池
+        if (go.activeSelf)
+            go.SetActive(false);
         go.transform.SetParent(boardRoot, false);
         go.transform.localPosition = localPos;
         go.transform.localRotation = Quaternion.identity;
-        go.transform.localScale = Vector3.one;
+        go.transform.localScale = Vector3.one * Mathf.Max(0.01f, scoreTextScaleFactor);
 
-        var uiText = go.GetComponentInChildren<Text>(true);
-        if (uiText != null)
-            uiText.text = text;
-#if TMP_PRESENT
-        var tmpText = go.GetComponentInChildren<TMP_Text>(true);
-        if (tmpText != null)
-            tmpText.text = text;
-#endif
+        bool assigned = view.SetScoreText(text);
+        if (!assigned)
+            Debug.LogWarning("[Match3] scoreTextPrefab has no supported text component in Match3ScoreTextView.");
 
+        go.SetActive(true);
         StartCoroutine(CoRecycleScoreText(go, scoreTextLifetime));
     }
 
@@ -639,7 +667,19 @@ public sealed class Match3Manager : MonoBehaviour
         go.transform.localPosition = Vector3.zero;
         go.transform.localRotation = Quaternion.identity;
         go.transform.localScale = Vector3.one;
-        _scoreTextPool.Enqueue(go);
+        var view = go.GetComponent<Match3ScoreTextView>();
+        if (view == null)
+            view = go.AddComponent<Match3ScoreTextView>();
+        _scoreTextPool.Enqueue(view);
+    }
+
+    private Match3ScoreTextView CreateScoreTextViewInstance()
+    {
+        var go = Instantiate(scoreTextPrefab, poolRoot, false);
+        var view = go.GetComponent<Match3ScoreTextView>();
+        if (view == null)
+            view = go.AddComponent<Match3ScoreTextView>();
+        return view;
     }
 
     /// <summary>将粒子主模块 Start Color 设为 tint（含子物体上的 ParticleSystem）。</summary>
@@ -1225,6 +1265,9 @@ public sealed class Match3Manager : MonoBehaviour
             if (gemPrefabs[i].GetComponent<Match3GemView>() == null)
                 Debug.LogWarning($"[Match3] Gem prefab at index {i} should have a Match3GemView component.");
         }
+
+        if (eliminationScoreAt3 == 0 && eliminationScoreAt8 == 0)
+            Debug.LogWarning("[Match3] eliminationScoreAt3 and eliminationScoreAt8 are both 0; 3-match score floors at 1 so +text still shows. Set positive endpoints for intended linear curve.");
 
         if (freezePrefab != null)
         {

@@ -487,6 +487,17 @@
     $('statLab').textContent = bad.length ? ('校验: ' + bad.slice(0, 2).join('；')) : ('节点 ' + state.nodes.length + ' · 入口 [0]');
   }
 
+  /**
+   * 视口坐标 → 画布内坐标（与 node.pos、SVG 连线一致）。
+   * #canvas 为 translate(panX, panY) scale(zoom)，origin 0 0，且左上角对齐 #wrap 内容区原点。
+   */
+  function clientToCanvasLocal(clientX, clientY) {
+    const r = wrap.getBoundingClientRect();
+    const x = (clientX - r.left - state.panX) / state.zoom;
+    const y = (clientY - r.top - state.panY) / state.zoom;
+    return { x, y };
+  }
+
   function bezier(x1, y1, x2, y2) {
     const dx = Math.max(48, Math.abs(x2 - x1) * 0.45);
     return `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
@@ -583,10 +594,17 @@
   }
 
   function openConnectTargetModal(conn, clientX, clientY) {
-    const rect = wrap.getBoundingClientRect();
-    const cx = (clientX - rect.left) / state.zoom - state.panX;
-    const cy = (clientY - rect.top) / state.zoom - state.panY;
-    const drop = snapPos(cx, cy);
+    const p0 = clientToCanvasLocal(clientX, clientY);
+    const drop = snapPos(p0.x, p0.y);
+
+    const priorRoles = Array.from(
+      new Set(
+        priorLineNodesWithActor(conn.from).map((idx) => state.nodes[idx].actorId)
+      )
+    );
+    const defaultActorId = 0;
+    let selectedActorId = priorRoles.length ? priorRoles[0] : defaultActorId;
+
     state.modalConnect = { ...conn, drop };
 
     const opts = $('modalOpts');
@@ -613,14 +631,6 @@
       renderAll();
     };
     opts.appendChild(b2);
-
-    const priorRoles = Array.from(
-      new Set(
-        priorLineNodesWithActor(conn.from).map((idx) => state.nodes[idx].actorId)
-      )
-    );
-    const defaultActorId = 0;
-    let selectedActorId = priorRoles.length ? priorRoles[0] : defaultActorId;
 
     if (priorRoles.length) {
       const wrapSel = document.createElement('div');
@@ -674,10 +684,7 @@
     const el = nodeEl.querySelector(sel);
     if (!el) return { x: 0, y: 0 };
     const r1 = el.getBoundingClientRect();
-    const r0 = wrap.getBoundingClientRect();
-    const x = (r1.left + r1.width / 2 - r0.left) / state.zoom - state.panX;
-    const y = (r1.top + r1.height / 2 - r0.top) / state.zoom - state.panY;
-    return { x, y };
+    return clientToCanvasLocal(r1.left + r1.width / 2, r1.top + r1.height / 2);
   }
 
   function drawEdges(preview) {
@@ -989,9 +996,7 @@
     if (state.connect) {
       const nel = canvas.querySelector(`.node[data-i="${state.connect.from}"]`);
       const outSel = state.connect.kind === 'line' ? '.port-out' : `.port-ch[data-ci="${state.connect.ci}"]`;
-      const rect = wrap.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / state.zoom - state.panX;
-      const y = (e.clientY - rect.top) / state.zoom - state.panY;
+      const { x, y } = clientToCanvasLocal(e.clientX, e.clientY);
       drawEdges({ el: nel, outSel, x, y });
     }
   });

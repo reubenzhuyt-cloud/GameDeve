@@ -578,6 +578,8 @@ MonoBehaviour:
   eliminationShrinkDuration: 0.18
   matchVfxReleasePadding: 0.08
   matchVfxRecycleMaxSeconds: 8
+  eliminationScoreAt3: 3
+  eliminationScoreAt8: 18
   scoreTextPrefab: {fileID: 4828004727608921288, guid: e8507cc96dd4b5b4ea806d95d5471f95, type: 3}
   scoreTextPoolSize: 16
   scoreTextLifetime: 0.9
@@ -622,9 +624,12 @@ MonoBehaviour:
   orbScaleVsScoreText: 0.83
   scoreTextScaleFallback: 0.2
   orbMinSpawnScale: 0.14
+  spawnInitialSpeedTowardBoss: 2.8
+  spawnRandomTangentSpeed: 0.35
   unitBallSize: 1.97
-  bossSeekAccel: 500
-  bossSeekAccelMax: 1500
+  bossSeekAccel: 5000
+  bossSeekAccelMax: 150000
+  bossSeekInverseSquareConstantC: 13010
   bossConstantRadialAcceleration: 204.6
   mutualGravity: 500.6
   mutualForceMax: 500.7

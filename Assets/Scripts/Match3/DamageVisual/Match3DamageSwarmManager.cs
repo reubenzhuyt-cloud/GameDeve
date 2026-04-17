@@ -23,6 +23,10 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
     [SerializeField] private float orbScaleVsScoreText = 0.35f;
     [SerializeField] private float scoreTextScaleFallback = 0.2f;
     [SerializeField] private float orbMinSpawnScale = 0.14f;
+    [Tooltip("生成时沿棋盘局部空间指向 Boss 方向的初速度大小")]
+    [SerializeField] private float spawnInitialSpeedTowardBoss = 2.8f;
+    [Tooltip("生成时垂直于指向 Boss 方向的随机切向扰动")]
+    [SerializeField] private float spawnRandomTangentSpeed = 0.35f;
 
     [Header("Unit ball size")]
     [Tooltip("单位球（质量=1）视觉整体缩放，Inspector 滑块调节")]
@@ -31,12 +35,14 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
 
     [Header("Sim (board-local space)")]
     [Tooltip("与距离平方成反比的 Boss 吸引强度")]
-    [SerializeField] private float bossSeekAccel = 275f;
-    [SerializeField] private float bossSeekAccelMax = 140f;
+    [SerializeField] private float bossSeekAccel = 1100f;
+    [SerializeField] private float bossSeekAccelMax = 560f;
+    [Tooltip("加在 bossSeekAccel/d² 之后的常数 C，远距离 d 大时仍保持明显指向 Boss 的分量")]
+    [SerializeField] private float bossSeekInverseSquareConstantC = 48f;
     [Tooltip("较大的指向 Boss 的恒定加速度（与 prefab 碰撞体大小无关）")]
-    [SerializeField] private float bossConstantRadialAcceleration = 475f;
-    [SerializeField] private float mutualGravity = 22f;
-    [SerializeField] private float mutualForceMax = 260f;
+    [SerializeField] private float bossConstantRadialAcceleration = 1900f;
+    [SerializeField] private float mutualGravity = 88f;
+    [SerializeField] private float mutualForceMax = 1040f;
     [SerializeField] private float damping = 0.992f;
     [SerializeField] private float mergeDistanceFactor = 0.92f;
     [SerializeField] private float radiusPerSqrtMass = 0.11f;
@@ -143,7 +149,7 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
             View = go,
             Alive = true,
             Pos = boardLocalSpawnPosition,
-            Vel = (Vector3)(Random.insideUnitCircle * 0.35f),
+            Vel = ComputeInitialVelocityTowardBoss(boardLocalSpawnPosition),
             Mass = 1f,
             TextScaleRef = refScale
         };
@@ -180,7 +186,8 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
             Vector3 toBoss = bossLocal - _orbs[i].Pos;
             float d = Mathf.Max(0.05f, toBoss.magnitude);
             Vector3 dir = toBoss / d;
-            float a = Mathf.Min(bossSeekAccelMax, bossSeekAccel / (d * d));
+            float invSq = bossSeekAccel / (d * d);
+            float a = Mathf.Min(bossSeekAccelMax, invSq + bossSeekInverseSquareConstantC);
             acc[i] += dir * (a + bossConstantRadialAcceleration);
         }
 
@@ -260,7 +267,7 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
                     View = go,
                     Alive = true,
                     Pos = pos,
-                    Vel = Vector3.zero,
+                    Vel = ComputeInitialVelocityTowardBoss(pos),
                     Mass = 1f,
                     TextScaleRef = scoreTextScaleFallback
                 };
@@ -271,6 +278,21 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
 
         for (int c = 0; c < t.childCount; c++)
             AdoptRecursive(t.GetChild(c));
+    }
+
+    private Vector3 ComputeInitialVelocityTowardBoss(Vector3 boardLocalPos)
+    {
+        Vector3 tangential = (Vector3)(Random.insideUnitCircle * spawnRandomTangentSpeed);
+        if (bossHit == null || boardRoot == null)
+            return tangential;
+
+        Vector3 bossLocal = boardRoot.InverseTransformPoint(bossHit.transform.position);
+        Vector3 toBoss = bossLocal - boardLocalPos;
+        float d = toBoss.magnitude;
+        if (d < 1e-4f)
+            return tangential;
+
+        return toBoss / d * spawnInitialSpeedTowardBoss + tangential;
     }
 
     private bool IsViewTracked(GameObject go)

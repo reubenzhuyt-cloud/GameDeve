@@ -103,7 +103,6 @@ public class DialogueSystem : MonoBehaviour
     
     private int lastChoiceIndex = -1;
     private string lastChoiceText = "";
-    private DialogueChoiceData lastSelectedChoice = null;
 
     private void Awake()
     {

@@ -11,7 +11,27 @@ using UnityEngine;
 /// </summary>
 public sealed class Match3Manager : MonoBehaviour
 {
+    /// <summary>玩家第一次<strong>成功</strong>交换（可消且已提交）后触发一次；用于开场台词等。</summary>
+    public event Action OnBattleStarted;
+
+    /// <summary>已成功提交的可消交换次数（无效拖放与弹回不计）。</summary>
+    public int SuccessfulPlayerMoveCount { get; private set; }
+
+    /// <summary>是否已发生过至少一次成功移动（等价于 <see cref="SuccessfulPlayerMoveCount"/> &gt; 0）。</summary>
+    public bool BattleHasStarted => SuccessfulPlayerMoveCount > 0;
+
     public event Action<int, int> OnEliminationDamage;
+
+    /// <summary>
+    /// 一次消除批次中，某颜色至少被消去 1 格时触发（类型 1–5）。用于护盾「各颜色至少消 1」等统计。
+    /// </summary>
+    public event Action<int> OnMatchEliminatedGemType;
+
+    /// <summary>
+    /// 冻结技能：当<strong>成功</strong>操作次数满足 <c>count % 6 == 3</c> 时触发，<b>整场最多 2 次</b>（通常第 3、9 手）。
+    /// 随机取 2 个 2×2 区域，将区域内格子全部改为冻结。参数为（触发时的成功操作次数，本次写入的格子数，重叠区域会去重）。
+    /// </summary>
+    public event Action<int, int> OnFreezeSkillTriggered;
 
     [Header("Prefabs (5 colors, index 0 = type 1)")]
     [SerializeField] private GameObject[] gemPrefabs = new GameObject[5];
@@ -94,7 +114,74 @@ public sealed class Match3Manager : MonoBehaviour
     private Vector2 _lastValidLocalDuringDrag;
     private Coroutine _runningRoutine;
 
+    private int _freezeSkillReleaseCount;
+
     public Match3BoardSimulator Simulator => _sim;
+
+    private void RegisterSuccessfulPlayerMove()
+    {
+        SuccessfulPlayerMoveCount++;
+        Debug.Log($"[Match3] 成功操作次数={SuccessfulPlayerMoveCount}");
+        if (SuccessfulPlayerMoveCount == 1)
+            OnBattleStarted?.Invoke();
+        TryReleaseFreezeSkillIfDue();
+    }
+
+    /// <summary>成功操作次数 <c>% 6 == 3</c> 时，随机 2 个 2×2 区域全部置冻并触发 <see cref="OnFreezeSkillTriggered"/>；整场最多 2 次。</summary>
+    private void TryReleaseFreezeSkillIfDue()
+    {
+        if (_freezeSkillReleaseCount >= 2)
+            return;
+
+        int m = SuccessfulPlayerMoveCount;
+        if (m % 6 != 3)
+            return;
+
+        int n = Match3BoardSimulator.Size;
+        if (n < 2)
+            return;
+
+        int span = n - 1;
+        int numTops = span * span;
+        if (numTops <= 0)
+            return;
+
+        int a = UnityEngine.Random.Range(0, numTops);
+        int b = UnityEngine.Random.Range(0, numTops);
+        while (b == a && numTops > 1)
+            b = UnityEngine.Random.Range(0, numTops);
+
+        static void IndexToTopLeft(int index, int span, out int br, out int bc)
+        {
+            br = index / span;
+            bc = index % span;
+        }
+
+        var cells = new HashSet<(int r, int c)>();
+        void Add2x2(int topIndex)
+        {
+            IndexToTopLeft(topIndex, span, out int br, out int bc);
+            for (int dr = 0; dr < 2; dr++)
+            {
+                for (int dc = 0; dc < 2; dc++)
+                    cells.Add((br + dr, bc + dc));
+            }
+        }
+
+        Add2x2(a);
+        Add2x2(b);
+
+        int frozen = 0;
+        foreach (var (r, c) in cells)
+        {
+            SetFreezeAt(c, r);
+            frozen++;
+        }
+
+        _freezeSkillReleaseCount++;
+        Debug.Log($"[Match3] 冻结技能触发 ({_freezeSkillReleaseCount}/2) 成功操作次数={m} 2×2区域数=2 去重后冻结格子数={frozen}");
+        OnFreezeSkillTriggered?.Invoke(m, frozen);
+    }
 
     private void Awake()
     {
@@ -147,7 +234,6 @@ public sealed class Match3Manager : MonoBehaviour
     private void Start()
     {
         _sim.RandomInitNoMatches();
-        SpawnTestFreezeLineAtCenter();
         SyncFromGrid();
     }
 
@@ -353,6 +439,8 @@ public sealed class Match3Manager : MonoBehaviour
             yield break;
         }
 
+        RegisterSuccessfulPlayerMove();
+
         (_cells[sr, sc], _cells[tr, tc]) = (_cells[tr, tc], _cells[sr, sc]);
         gemA.Setup(_sim.GetCell(tr, tc));
         gemB.Setup(_sim.GetCell(sr, sc));
@@ -473,6 +561,12 @@ public sealed class Match3Manager : MonoBehaviour
 
     private void ApplyColorScoreForElimination(int[] colorCounts, Vector3[] colorPosSums)
     {
+        for (int type = Match3BoardSimulator.MinType; type <= Match3BoardSimulator.MaxType; type++)
+        {
+            if (colorCounts[type] > 0)
+                OnMatchEliminatedGemType?.Invoke(type);
+        }
+
         for (int type = Match3BoardSimulator.MinType; type <= Match3BoardSimulator.MaxType; type++)
         {
             int cnt = colorCounts[type];
@@ -962,6 +1056,7 @@ public sealed class Match3Manager : MonoBehaviour
     {
         if (!_sim.TrySwap(rowA, colA, rowB, colB))
             return false;
+        RegisterSuccessfulPlayerMove();
         SyncFromGrid();
         return true;
     }
@@ -1191,14 +1286,6 @@ public sealed class Match3Manager : MonoBehaviour
             _sim.SetCell(row, col, Match3BoardSimulator.MinType);
         _sim.SetLocked(row, col, true);
         EnsureFreezeViewAt(row, col);
-    }
-
-    private void SpawnTestFreezeLineAtCenter()
-    {
-        int row = Match3BoardSimulator.Size / 2;
-        int startCol = (Match3BoardSimulator.Size - 5) / 2;
-        for (int i = 0; i < 5; i++)
-            SetFreezeAt(startCol + i, row);
     }
 
     private void PlaceCell(Transform tr, int row, int col)

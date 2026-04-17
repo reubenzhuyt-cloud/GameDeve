@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,6 +9,9 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProjectileSpawn
 {
+    /// <summary>伤害球命中 Boss 碰撞体时触发；伤害量由球体质量折算（合并越大伤害越高）。</summary>
+    public event Action<int> OnBossDamagedByOrb;
+
     [Header("Refs")]
     [SerializeField] private Transform boardRoot;
     [SerializeField] private BossDamageHitFeedback bossHit;
@@ -234,7 +238,7 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
         var rb = go.GetComponent<Rigidbody2D>();
         if (rb == null)
             return;
-        rb.isKinematic = true;
+        rb.bodyType = RigidbodyType2D.Kinematic;
         rb.useFullKinematicContacts = true;
     }
 
@@ -282,7 +286,7 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
 
     private Vector3 ComputeInitialVelocityTowardBoss(Vector3 boardLocalPos)
     {
-        Vector3 tangential = (Vector3)(Random.insideUnitCircle * spawnRandomTangentSpeed);
+        Vector3 tangential = (Vector3)(UnityEngine.Random.insideUnitCircle * spawnRandomTangentSpeed);
         if (bossHit == null || boardRoot == null)
             return tangential;
 
@@ -360,6 +364,8 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
             Vector2 closest = bossCol.ClosestPoint(world);
             if ((world - closest).sqrMagnitude <= (r + hitSlack) * (r + hitSlack))
             {
+                int dmg = Mathf.Max(1, Mathf.RoundToInt(o.Mass));
+                OnBossDamagedByOrb?.Invoke(dmg);
                 bossHit.PlayHitFlash();
                 ReleaseView(o.View);
                 o.Alive = false;

@@ -1,4 +1,4 @@
-"""已合并至 generate_tts.py；保留此文件以兼容旧命令。"""
+"""已合并至 generate_tts.py edge-boss；保留此文件以兼容旧命令。"""
 from __future__ import annotations
 
 import sys
@@ -11,4 +11,4 @@ if str(_TOOLS) not in sys.path:
 from generate_tts import main  # noqa: E402
 
 if __name__ == "__main__":
-    main(["dialogue"] + sys.argv[1:])
+    main(["edge-boss"] + sys.argv[1:])

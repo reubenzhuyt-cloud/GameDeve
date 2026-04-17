@@ -911,6 +911,16 @@
     });
   }
 
+  /** 选中变化时更新列表、右侧属性区与画布节点高亮（不重建画布 DOM，避免打断拖拽） */
+  function refreshSelectionUi() {
+    $('btnDel').disabled = state.sel < 0;
+    canvas.querySelectorAll('.node').forEach((el) => {
+      el.classList.toggle('sel', +el.dataset.i === state.sel);
+    });
+    renderList();
+    renderInspector();
+  }
+
   function renderAll() {
     $('dlgName').value = state.name;
     $('btnDel').disabled = state.sel < 0;
@@ -960,6 +970,7 @@
       state.connect = null;
       const i = +nodeEl.dataset.i;
       state.sel = i;
+      refreshSelectionUi();
       const n = state.nodes[i];
       state.drag = { i, ox: n.pos.x, oy: n.pos.y, px: e.clientX, py: e.clientY };
       e.preventDefault();
@@ -969,6 +980,7 @@
     if (!nodeEl && !pr && !pin) {
       state.pan = { x: e.clientX, y: e.clientY };
       state.sel = -1;
+      refreshSelectionUi();
     }
   });
 

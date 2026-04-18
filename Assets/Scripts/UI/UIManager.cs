@@ -418,6 +418,11 @@ public class UIManager : MonoBehaviour
             panel.canvasGroup.blocksRaycasts = false;
         }
 
+        // 若把「整块屏幕的 Canvas 根」注册成某个面板，SetActive(false) 会关掉其下所有 HUD（含 InteractionTip），看起来像 Canvas 被谁禁用了。
+        // 只藏内容时用 CanvasGroup；根 Canvas 保持 Active，子面板单独关即可。
+        if (panel.gameObject.GetComponent<Canvas>() != null)
+            return;
+
         panel.gameObject.SetActive(false);
     }
 
@@ -481,7 +486,8 @@ public class UIManager : MonoBehaviour
         {
             panel.canvasGroup.interactable = false;
             panel.canvasGroup.blocksRaycasts = false;
-            panel.gameObject.SetActive(false);
+            if (panel.gameObject.GetComponent<Canvas>() == null)
+                panel.gameObject.SetActive(false);
         }
 
         fadeCoroutines[panel.type] = null;

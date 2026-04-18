@@ -16,13 +16,10 @@ public abstract class DialogueLogicBase : MonoBehaviour
     protected virtual void Awake()
     {
         if (dialogueObj == null)
-        {
-            dialogueObj = GetComponent<DialogueObj>();
-        }
+            dialogueObj = GetComponent<DialogueObj>() ?? GetComponentInChildren<DialogueObj>(true);
+
         if (string.IsNullOrEmpty(objectId))
-        {
             objectId = gameObject.name;
-        }
     }
     
     protected virtual void Start()
@@ -31,22 +28,31 @@ public abstract class DialogueLogicBase : MonoBehaviour
     }
 
     /// <summary>
-    /// 与渔夫 NPC 同款：补 <see cref="DialogueObj"/> 与 Resources 路径、无碰撞体时加 Trigger + Kinematic Rigidbody2D，
-    /// 便于 Player 触发器与 F 提示锚点。
-    /// 请在 <see cref="Awake"/> 里、在 <c>base.Awake()</c> 之前调用（并先设好 <see cref="objectId"/>）。
+    /// 只绑定 <see cref="DialogueObj"/> 与 Resources 路径（可在子物体上），不添加碰撞体/RB。
+    /// 用于已在场景里摆好 Trigger + Tag 的 NPC（例如第二次对话），避免与自动补全冲突。
     /// </summary>
-    protected void EnsureLineNpcInteractSupport(string dialogueResourcePath)
+    protected void BindDialogueObjResource(string dialogueResourcePath)
     {
         if (string.IsNullOrEmpty(dialogueResourcePath))
             return;
 
         if (dialogueObj == null)
-            dialogueObj = GetComponent<DialogueObj>();
+            dialogueObj = GetComponent<DialogueObj>() ?? GetComponentInChildren<DialogueObj>(true);
         if (dialogueObj == null)
             dialogueObj = gameObject.AddComponent<DialogueObj>();
         dialogueObj.EnsureSingleDialogue(dialogueResourcePath);
+    }
 
-        if (GetComponent<Collider2D>() != null)
+    /// <summary>
+    /// 与渔夫 NPC 同款：补 <see cref="DialogueObj"/>、无碰撞体时在本物体加 Trigger + Kinematic Rigidbody2D。
+    /// 若 <b>子物体上已有</b> <see cref="Collider2D"/>，则不再添加，避免多出一个未打 Tag 的根碰撞体导致「进范围没反应」。
+    /// 请在 <see cref="Awake"/> 里、在 <c>base.Awake()</c> 之前调用（并先设好 <see cref="objectId"/>）。
+    /// </summary>
+    protected void EnsureLineNpcInteractSupport(string dialogueResourcePath)
+    {
+        BindDialogueObjResource(dialogueResourcePath);
+
+        if (HasCollider2DInSelfOrChildren())
             return;
 
         var box = gameObject.AddComponent<BoxCollider2D>();
@@ -59,6 +65,11 @@ public abstract class DialogueLogicBase : MonoBehaviour
             rb.bodyType = RigidbodyType2D.Kinematic;
             rb.simulated = true;
         }
+    }
+
+    private bool HasCollider2DInSelfOrChildren()
+    {
+        return GetComponent<Collider2D>() != null || GetComponentInChildren<Collider2D>(true) != null;
     }
 
     /// <summary>若未使用 <see cref="InteractableObject"/>，提示 Tag/Trigger 是否与孟婆、渔夫一致。</summary>

@@ -342,7 +342,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d2d93777794881448dab8ad51dc12ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dialoguePanel: {fileID: 5168628968325440564, guid: e8e74cf154100344781bd2d74feca38e, type: 3}
+  dialoguePanel: {fileID: 1876668445734085466, guid: e8e74cf154100344781bd2d74feca38e, type: 3}
   actorNameUGUI: {fileID: 0}
   dialogueUGUI: {fileID: 0}
   choicePanel: {fileID: 0}
@@ -366,6 +366,9 @@ MonoBehaviour:
     portraitImage: {fileID: 0}
   - actorId: 5
     portraitSprite: {fileID: 7694712343530924960, guid: c12f6758a30f58740a4d3d0dc4acd985, type: 3}
+    portraitImage: {fileID: 0}
+  - actorId: 6
+    portraitSprite: {fileID: -851320148736375, guid: 59baa25f31c58594589958034d5214b6, type: 3}
     portraitImage: {fileID: 0}
   typingSpeed: 0.05
   actors:

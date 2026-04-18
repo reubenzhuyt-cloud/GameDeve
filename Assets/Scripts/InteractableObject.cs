@@ -29,13 +29,9 @@ public class InteractableObject : MonoBehaviour
     protected virtual void Awake()
     {
         if (dialogueObj == null)
-        {
-            dialogueObj = GetComponent<DialogueObj>();
-        }
+            dialogueObj = GetComponent<DialogueObj>() ?? GetComponentInChildren<DialogueObj>(true);
         if (dialogueLogic == null)
-        {
-            dialogueLogic = GetComponent<DialogueLogicBase>();
-        }
+            dialogueLogic = GetComponent<DialogueLogicBase>() ?? GetComponentInChildren<DialogueLogicBase>(true);
 
         if (playerLayer.value == 0)
         {

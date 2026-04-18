@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// 许秋慈 · 场景二（后续剧情）：对白文件《孟忘和肉包子的第二次》。
 /// 与 <see cref="XuQiuCiDialogueLogic_FirstMeeting"/> 为两个场景各用一份脚本，存档用不同 <see cref="DialogueLogicBase.objectId"/>。
-/// 同物体：Collider2D Trigger、Tag「CanInteractWith」、<see cref="DialogueObj"/>、本脚本。
+/// 交互请在场景里自行配置（子物体 Trigger + Tag「CanInteractWith」亦可）：本脚本只绑定对白资源，不自动加碰撞体，避免与场景重复挂载冲突。
 /// </summary>
 public class XuQiuCiDialogueLogic_SecondMeeting : DialogueLogicBase
 {
@@ -31,7 +31,7 @@ public class XuQiuCiDialogueLogic_SecondMeeting : DialogueLogicBase
         if (string.IsNullOrEmpty(objectId))
             objectId = "XuQiuCi_SecondMeeting";
 
-        EnsureLineNpcInteractSupport(dialogueFile);
+        BindDialogueObjResource(dialogueFile);
 
         base.Awake();
     }

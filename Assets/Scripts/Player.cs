@@ -313,9 +313,9 @@ public class Player : Entity
             UnregisterProximityInteractable(_proximityInteractable);
 
         _proximityInteractable = zone;
-        dialogueLogic = zone.GetComponent<DialogueLogicBase>();
-        dialogueObj = zone.GetComponent<DialogueObj>();
-        currentNPC = zone.GetComponent<NPC>();
+        dialogueLogic = zone.GetComponent<DialogueLogicBase>() ?? zone.GetComponentInParent<DialogueLogicBase>();
+        dialogueObj = zone.GetComponent<DialogueObj>() ?? zone.GetComponentInParent<DialogueObj>();
+        currentNPC = zone.GetComponent<NPC>() ?? zone.GetComponentInParent<NPC>();
         currentInteractable = zone;
 
         string msg = string.IsNullOrEmpty(prompt) ? "按 F 对话" : prompt;
@@ -345,6 +345,23 @@ public class Player : Entity
             currentNPC = null;
 
         SetWorldInteractionTip(false, "", Vector3.zero);
+
+        // 同一 NPC 上常同时挂「大范围 Trigger」与 InteractableObject 小半径：离开距离圈时仍会留在 Trigger 里，
+        // 若不清空则上面已关提示；此处按当前物理触发器恢复引用与「按 F」，避免 Press F 永久消失。
+        if (_activeInteractTrigger != null && _activeInteractTrigger.CompareTag("CanInteractWith"))
+        {
+            dialogueObj = _activeInteractTrigger.GetComponent<DialogueObj>() ?? _activeInteractTrigger.GetComponentInParent<DialogueObj>();
+            dialogueLogic = _activeInteractTrigger.GetComponent<DialogueLogicBase>() ?? _activeInteractTrigger.GetComponentInParent<DialogueLogicBase>();
+            currentNPC = _activeInteractTrigger.GetComponent<NPC>() ?? _activeInteractTrigger.GetComponentInParent<NPC>();
+            currentInteractable = _activeInteractTrigger.GetComponent<InteractableObject>() ?? _activeInteractTrigger.GetComponentInParent<InteractableObject>();
+
+            Transform tipAnchor = dialogueObj != null ? dialogueObj.transform
+                : dialogueLogic != null ? dialogueLogic.transform
+                : currentNPC != null ? currentNPC.transform
+                : _activeInteractTrigger.transform;
+
+            SetWorldInteractionTip(true, "按 F 对话", tipAnchor.position + new Vector3(0f, 0.5f, 0f));
+        }
     }
 
     /// <summary>

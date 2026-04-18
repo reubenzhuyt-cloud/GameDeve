@@ -11,6 +11,10 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private float bgmPitch = 0.45f;
     [SerializeField] private bool loopBGM = true;
 
+    /// <summary>Boss 等：&gt;0 时由 <see cref="SetBgmLoopRestartFromSeconds"/> 接管，循环回到该秒处而非 0。</summary>
+    private bool _bgmManualLoopWithRestart;
+    private float _bgmLoopRestartSeconds;
+
     [Header("Step Sound Settings")]
     [SerializeField] private AudioSource stepSource;
     [SerializeField] private float stepVolume = 0.5f;
@@ -81,6 +85,29 @@ public class AudioManager : MonoBehaviour
         if (!stepSource.isPlaying)
             PlayRandomStepSound();
     }
+
+    private void LateUpdate()
+    {
+        TickBgmManualLoopRestart();
+    }
+
+    private void TickBgmManualLoopRestart()
+    {
+        if (!_bgmManualLoopWithRestart || bgmSource == null || !bgmSource.isPlaying || bgmSource.clip == null)
+            return;
+
+        float len = bgmSource.clip.length;
+        if (len <= 0.1f)
+            return;
+
+        if (bgmSource.time < len - 0.08f)
+            return;
+
+        bgmSource.Stop();
+        bgmSource.time = Mathf.Clamp(_bgmLoopRestartSeconds, 0f, len - 0.01f);
+        bgmSource.Play();
+    }
+
     public void Start()
     {
         PlayBGM(0);
@@ -92,6 +119,8 @@ public class AudioManager : MonoBehaviour
             Debug.LogError($"BGM clip index {clipIndex} is out of range");
             return;
         }
+
+        ClearBgmLoopRestartOverride();
 
         if (bgmSource.clip == bgmClips[clipIndex] && bgmSource.isPlaying)
         {
@@ -110,6 +139,8 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
+        ClearBgmLoopRestartOverride();
+
         if (bgmSource.clip == clip && bgmSource.isPlaying)
         {
             return;
@@ -119,8 +150,43 @@ public class AudioManager : MonoBehaviour
         bgmSource.Play();
     }
 
+    /// <summary>
+    /// 第二次及以后循环从指定秒数开始（跳过片头）。&lt;=0 时恢复为普通 <see cref="loopBGM"/>。
+    /// </summary>
+    public void SetBgmLoopRestartFromSeconds(double secondsFromClipStart)
+    {
+        if (bgmSource == null)
+            return;
+
+        if (secondsFromClipStart <= 0.0)
+        {
+            ClearBgmLoopRestartOverride();
+            return;
+        }
+
+        AudioClip c = bgmSource.clip;
+        if (c == null)
+            return;
+
+        float len = c.length;
+        if (len <= 0.05f)
+            return;
+
+        _bgmLoopRestartSeconds = Mathf.Clamp((float)secondsFromClipStart, 0f, len - 0.01f);
+        _bgmManualLoopWithRestart = true;
+        bgmSource.loop = false;
+    }
+
+    public void ClearBgmLoopRestartOverride()
+    {
+        _bgmManualLoopWithRestart = false;
+        if (bgmSource != null)
+            bgmSource.loop = loopBGM;
+    }
+
     public void StopBGM()
     {
+        ClearBgmLoopRestartOverride();
         bgmSource.Stop();
     }
 
@@ -144,6 +210,9 @@ public class AudioManager : MonoBehaviour
     {
         return bgmSource.isPlaying;
     }
+
+    /// <summary>当前正在播放的 BGM 片段（可能为 null）。用于 Boss 关等临时切换后恢复。</summary>
+    public AudioClip CurrentBGMClip => bgmSource != null ? bgmSource.clip : null;
 
     #region Step Sound
     private void PlayRandomStepSound()

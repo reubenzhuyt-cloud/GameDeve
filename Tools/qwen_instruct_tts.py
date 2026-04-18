@@ -19,6 +19,7 @@ from mimo_tts import (
     BOSS_AUDIO_DIR,
     BOSS_TTS_FIXED_LINES,
     DIALOGUE_DIR,
+    merge_dialogue_manifest_updates,
 )
 
 from qwen_vd_tts import DASHSCOPE_API_KEY, _extract_audio_url
@@ -26,11 +27,14 @@ from qwen_vd_tts import DASHSCOPE_API_KEY, _extract_audio_url
 MODEL_FLASH = "qwen3-tts-flash"
 
 # 系统音色（与阿里云文档一致）；按角色区分声线
+# actor 1 孟婆：qwen3-tts-flash 仅支持「千问3-TTS」音色表；longlaoyi 等有声书 ID 会 400。
+# Jada=沪上阿姐，比 Maia/Cherry 更成熟；若仍不够老可改走 MiMo（ACTOR_STYLES 已加强老年描述）。
 ACTOR_VOICES: dict[int, str] = {
     0: "Cherry",
-    1: "Maia",
+    1: "Jada",
     2: "Seren",
-    3: "Neil",
+    # 3=渔夫：与 5 佃户同款男声（Arthur）
+    3: "Arthur",
     5: "Arthur",
     6: "Mia",
 }
@@ -186,6 +190,8 @@ def run_dialogue_batch_instruct(
         all_results.append(result)
 
     manifest_path = AUDIO_OUTPUT_DIR / "dialogue_audio_manifest.json"
+    if file_pattern:
+        all_results = merge_dialogue_manifest_updates(manifest_path, all_results)
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(all_results, f, ensure_ascii=False, indent=2)
     print("\n" + "=" * 60)

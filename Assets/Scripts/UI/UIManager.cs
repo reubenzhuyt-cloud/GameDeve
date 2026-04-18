@@ -520,11 +520,20 @@ public class UIManager : MonoBehaviour
             if (canvas == null)
                 continue;
             var cg = canvas.GetComponent<CanvasGroup>();
-            if (cg != null && cg.alpha < 0.01f)
+            if (cg != null)
             {
-                cg.alpha = 1f;
-                cg.interactable = true;
-                cg.blocksRaycasts = true;
+                if (cg.alpha < 0.01f)
+                {
+                    cg.alpha = 1f;
+                    cg.interactable = true;
+                    cg.blocksRaycasts = true;
+                }
+                else if (!cg.blocksRaycasts || !cg.interactable)
+                {
+                    // Visible tree but input blocked (e.g. after scene transition) — restore hit-testing without changing alpha.
+                    cg.interactable = true;
+                    cg.blocksRaycasts = true;
+                }
             }
             break;
         }

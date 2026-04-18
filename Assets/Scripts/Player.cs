@@ -74,6 +74,7 @@ public class Player : Entity
         base.Start();
         stateMachine.Initialize(idleState);
 
+        ResolveInteractionTipIfMissing();
         RefreshInteractionTipBinding();
         if (GameManager.instance != null)
             GameManager.instance.onUIPrepared.AddListener(OnGameManagerUiPrepared);
@@ -87,8 +88,29 @@ public class Player : Entity
 
     private void OnEnable()
     {
+        ResolveInteractionTipIfMissing();
         // 切场景后 UIManager 会 RemoveStalePanelReferences，需在 UIManager 就绪后重新注册 InteractionTip。
         RefreshInteractionTipBinding();
+    }
+
+    /// <summary>
+    /// Canvas 上「TipText」的 TMP 未在 Inspector 拖给 Player 时，运行时按名称绑定（避免 Press F 整段逻辑空引用无提示）。
+    /// </summary>
+    private void ResolveInteractionTipIfMissing()
+    {
+        if (interactionUGUI != null)
+            return;
+
+        var tmps = Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < tmps.Length; i++)
+        {
+            var t = tmps[i];
+            if (t != null && t.gameObject.name == "TipText")
+            {
+                interactionUGUI = t;
+                return;
+            }
+        }
     }
 
     private void OnGameManagerUiPrepared()
@@ -121,6 +143,11 @@ public class Player : Entity
         bool interactionVisible = UIManager.instance != null 
             ? UIManager.instance.IsVisible(UIType.InteractionTip) 
             : (interactionUGUI != null && interactionUGUI.gameObject.activeSelf);
+
+        // IsVisible 仅看面板字典与 activeSelf；切场景/Canvas 链异常时可能已为「有交互」但 UIManager 仍判不可见，导致按 F 无效。
+        if (!interactionVisible && interactionUGUI != null && interactionUGUI.gameObject.activeInHierarchy
+            && (dialogueObj != null || dialogueLogic != null || currentInteractable != null || currentNPC != null))
+            interactionVisible = true;
             
         if (interactionVisible && stateMachine.currentState != chatState)
         {
@@ -208,7 +235,8 @@ public class Player : Entity
 
         if (!UIManager.instance.IsPanelRegistered(UIType.InteractionTip))
         {
-            UIManager.instance.RegisterPanel(UIType.InteractionTip, interactionUGUI.gameObject, false, true);
+            // startHidden 必须为 false：true 会立刻 HideImmediate，进范围后若与 Show 不同帧易导致提示永远不出现。
+            UIManager.instance.RegisterPanel(UIType.InteractionTip, interactionUGUI.gameObject, false, false);
             return;
         }
 
@@ -216,7 +244,7 @@ public class Player : Entity
         if (go == null)
         {
             UIManager.instance.UnregisterPanel(UIType.InteractionTip);
-            UIManager.instance.RegisterPanel(UIType.InteractionTip, interactionUGUI.gameObject, false, true);
+            UIManager.instance.RegisterPanel(UIType.InteractionTip, interactionUGUI.gameObject, false, false);
         }
     }
 
@@ -261,6 +289,8 @@ public class Player : Entity
             var cam = GetInteractionTipCamera();
             if (cam != null)
                 interactionUGUI.rectTransform.position = cam.WorldToScreenPoint(worldAnchor);
+            else
+                interactionUGUI.rectTransform.position = new Vector3(Screen.width * 0.5f, 140f, 0f);
         }
 
         if (UIManager.instance != null)
@@ -423,6 +453,7 @@ public class Player : Entity
             dialogueObj = other.GetComponent<DialogueObj>() ?? other.GetComponentInParent<DialogueObj>();
             dialogueLogic = other.GetComponent<DialogueLogicBase>() ?? other.GetComponentInParent<DialogueLogicBase>();
             currentNPC = other.GetComponent<NPC>() ?? other.GetComponentInParent<NPC>();
+            currentInteractable = other.GetComponent<InteractableObject>() ?? other.GetComponentInParent<InteractableObject>();
 
             Transform tipAnchor = dialogueObj != null ? dialogueObj.transform
                 : dialogueLogic != null ? dialogueLogic.transform

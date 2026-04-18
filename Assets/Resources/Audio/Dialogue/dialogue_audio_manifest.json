@@ -461,7 +461,7 @@
       {
         "node_id": 3,
         "actor_id": 3,
-        "actor_name": "Narrator",
+        "actor_name": "Fisherman",
         "filename": "孟忘和渔夫_node3.wav",
         "text": "你今晚要是饿得睡不着，便去那庙里歇息吧"
       },
@@ -475,7 +475,7 @@
       {
         "node_id": 5,
         "actor_id": 3,
-        "actor_name": "Narrator",
+        "actor_name": "Fisherman",
         "filename": "孟忘和渔夫_node5.wav",
         "text": "好多年没有了。。。。"
       }

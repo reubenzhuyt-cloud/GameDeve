@@ -5301,6 +5301,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
+--- !u!4 &482240085 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
+  m_PrefabInstance: {fileID: 653740691}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &549606357
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5612,7 +5617,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 872695910}
     m_Modifications:
     - target: {fileID: 783653380080317849, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_SpriteTilingProperty.oldSize.x
@@ -5624,23 +5629,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.32
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.32
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.32
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -28.34
+      value: -0.7308923
       objectReference: {fileID: 0}
     - target: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.97
+      value: -20.71608
       objectReference: {fileID: 0}
     - target: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_LocalPosition.z
@@ -5648,7 +5653,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.71500814
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_LocalRotation.x
@@ -5660,7 +5665,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.6991162
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -5764,6 +5769,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1cc1f37a89135d244910dea210dfcd56, type: 3}
+--- !u!4 &872695910 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
+  m_PrefabInstance: {fileID: 940060982}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &931522796
 GameObject:
   m_ObjectHideFlags: 0
@@ -6038,7 +6048,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 3073961487074481342, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 482240085}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 318a1074bbee05c4f8b6040ce4dc8cac, type: 3}
 --- !u!1 &1015028183
@@ -6394,6 +6407,7 @@ MonoBehaviour:
   dialogueFile: "\u4EBA\u7269\u5BF9\u8BDD\u6587\u4EF6\u5939/\u5B5F\u5FD8\u548C\u8089\u5305\u5B50\u7684\u7B2C\u4E8C\u6B21"
   completeOnFirstTalkQuestId: 
   nextSceneAfterSecondMeeting: BossFight
+  debugXuQiuCi2Interact: 1
 --- !u!114 &1182502567
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7414,7 +7428,7 @@ MonoBehaviour:
   attackCheckRadius: 0
   moveSpeed: 2.64
   jumpForce: 8
-  interactionUGUI: {fileID: 0}
+  interactionUGUI: {fileID: 549606359}
   questPanelKey: 106
   CounterDuration: 0
   dialogueObj: {fileID: 0}
@@ -8131,7 +8145,6 @@ SceneRoots:
   - {fileID: 466806080}
   - {fileID: 1127326194}
   - {fileID: 940060982}
-  - {fileID: 653740691}
   - {fileID: 1578810941}
   - {fileID: 1204005270}
   - {fileID: 1182502565}

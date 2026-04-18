@@ -471,6 +471,9 @@ public class DialogueSystem : MonoBehaviour
         else
             choicePanel.SetActive(true);
 
+        // Same as EnsureDialoguePanelShown: shared Canvas root may keep CanvasGroup alpha/blocksRaycasts off; choice UI must receive clicks.
+        UIManager.EnsureCanvasRootVisible(choicePanel);
+
         RectTransform buttonRect = choiceButtonPrefab.GetComponent<RectTransform>();
         float buttonHeight = buttonRect.rect.height;
         float spacing = 80f;

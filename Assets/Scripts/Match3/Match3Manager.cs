@@ -28,6 +28,11 @@ public sealed class Match3Manager : MonoBehaviour
     public event Action<int> OnMatchEliminatedGemType;
 
     /// <summary>
+    /// 一轮消除的计分与事件派发全部结束后触发（每成功消除一批棋子一次）。Boss 关消除音效等。
+    /// </summary>
+    public event Action OnEliminationWaveCompleted;
+
+    /// <summary>
     /// 冻结技能：当<strong>成功</strong>操作次数满足 <c>count % 6 == 3</c> 时触发，<b>整场最多 2 次</b>（通常第 3、9 手）。
     /// 随机取 2 个 2×2 区域，将区域内格子全部改为冻结。参数为（触发时的成功操作次数，本次写入的格子数，重叠区域会去重）。
     /// </summary>
@@ -584,6 +589,7 @@ public sealed class Match3Manager : MonoBehaviour
         }
 
         LogColorScores();
+        OnEliminationWaveCompleted?.Invoke();
     }
 
     /// <summary>3 连以下 0 分；3~8 在 <see cref="eliminationScoreAt3"/> 与 <see cref="eliminationScoreAt8"/> 间线性；更大消除按同斜率继续加分。</summary>

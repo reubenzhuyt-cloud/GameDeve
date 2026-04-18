@@ -48,13 +48,15 @@ public class PlayerChatState : PlayerState
                 return;
             }
             
-            if (player.currentNPC != null)
-            {
-                player.currentNPC.Interact();
-            }
-            else if (player.currentInteractable != null)
+            // 与 CanInteractWith + InteractableObject 配置一致：优先走 InteractableObject（引用完整），
+            // 避免同物体上另有 NPC 组件但对话引用未填时抢先 return，导致按 F 无反应。
+            if (player.currentInteractable != null)
             {
                 player.currentInteractable.Interact();
+            }
+            else if (player.currentNPC != null)
+            {
+                player.currentNPC.Interact();
             }
             else if (player.dialogueLogic != null)
             {

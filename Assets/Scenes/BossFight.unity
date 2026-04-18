@@ -603,10 +603,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1faf13c8cf8a7474089780134125be2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  match3Manager: {fileID: 2129765853}
-  layoutAnchor: {fileID: 1540641428}
-  horizontalSpacing: 1.1
-  iconScale: 1
 --- !u!1 &848692334
 GameObject:
   m_ObjectHideFlags: 0
@@ -1131,6 +1127,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1540641428}
+  - component: {fileID: 1540641429}
   m_Layer: 0
   m_Name: GameObject (1)
   m_TagString: Untagged
@@ -1153,6 +1150,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1540641429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1540641427}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b7290edd4a2b79429cd76c98027f862, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bossBattleBgm: {fileID: 8300000, guid: eff76c73cb26719439145a36bcee99a5, type: 3}
+  bgmLoopRestartTime: 53
+  bossHitSfx: {fileID: 8300000, guid: 3219e08a6f1b403499b6d2f0bea93b90, type: 3}
+  eliminationSfx: {fileID: 8300000, guid: 6e37bd021d54deb4bb71ce929106aa20, type: 3}
+  match3Manager: {fileID: 0}
+  damageSwarm: {fileID: 0}
+  hitSfxVolume: 0.602
+  eliminationSfxVolume: 1
+  hitSfxCooldownSeconds: 0.07
 --- !u!1 &1568134168
 GameObject:
   m_ObjectHideFlags: 0
@@ -1858,10 +1876,11 @@ MonoBehaviour:
   damageSwarm: {fileID: 0}
   bossDialogue: {fileID: 425390433}
   healthBar: {fileID: 0}
-  phase1MaxHp: 100
-  phase2MaxHp: 300
+  phase1MaxHp: 200
+  phase2MaxHp: 360
   shieldInfoText: {fileID: 1568134169}
   shieldVisualRoot: {fileID: 514233032}
+  phase2ShieldCombinedScoreRequired: 40
 --- !u!1001 &1007483888736752827
 PrefabInstance:
   m_ObjectHideFlags: 0

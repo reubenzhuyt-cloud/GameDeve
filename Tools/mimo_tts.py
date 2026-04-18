@@ -52,9 +52,10 @@ BOSS_AUDIO_DIR = PROJECT_ROOT / "Assets" / "Resources" / "Audio" / "BossBattle"
 # 短词 + 空格；与 MiMo 文档示例一致（style 仅作语气/人设提示，非本声克隆）。
 ACTOR_STYLES: dict[int, str] = {
     0: "年轻女 平和 好奇",
-    1: "老年女 缓慢 慈祥 神秘",
+    1: "老年女 七旬 沙哑 缓慢 慈祥 神秘",
     2: "虚弱 飘渺 叹息",
-    3: "中性 平静",
+    # 3=渔夫：与 5 佃户同款语气
+    3: "中年男 憨厚 乡音 慢语速 絮叨 喜感",
     # 5：男 NPC 佃户（参考范伟式乡土憨厚）；6：女 NPC 肉包子/许秋慈（参考张子枫式青涩阴郁少女，非本声克隆）
     5: "中年男 憨厚 乡音 慢语速 絮叨 喜感",
     6: "少女 清弱 怯生生 低声 阴郁 气声 单薄",
@@ -64,7 +65,7 @@ ACTOR_NAMES: dict[int, str] = {
     0: "Player",
     1: "MengPo",
     2: "WeakSoul",
-    3: "Narrator",
+    3: "Fisherman",
     5: "TenantFarmer",
     6: "RouBaZi",
 }
@@ -264,6 +265,39 @@ def process_dialogue_file(
     return results
 
 
+def merge_dialogue_manifest_updates(
+    manifest_path: Path,
+    new_results: list,
+) -> list:
+    """部分重跑对话时按 file_name 合并进已有 manifest，避免只剩子集。"""
+    if not manifest_path.is_file():
+        return new_results
+    try:
+        with open(manifest_path, encoding="utf-8") as f:
+            prev = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return new_results
+    if not isinstance(prev, list):
+        return new_results
+    updates = {r["file_name"]: r for r in new_results if isinstance(r, dict) and "file_name" in r}
+    merged: list = []
+    replaced: set[str] = set()
+    for x in prev:
+        if not isinstance(x, dict):
+            merged.append(x)
+            continue
+        fn = x.get("file_name")
+        if fn in updates:
+            merged.append(updates[fn])
+            replaced.add(fn)
+        else:
+            merged.append(x)
+    for fn, r in updates.items():
+        if fn not in replaced:
+            merged.append(r)
+    return merged
+
+
 def run_dialogue_batch(
     *,
     file_pattern: str | None = None,
@@ -304,6 +338,8 @@ def run_dialogue_batch(
         all_results.append(result)
 
     manifest_path = AUDIO_OUTPUT_DIR / "dialogue_audio_manifest.json"
+    if file_pattern:
+        all_results = merge_dialogue_manifest_updates(manifest_path, all_results)
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(all_results, f, ensure_ascii=False, indent=2)
     print("\n" + "=" * 60)

@@ -359,13 +359,13 @@ MonoBehaviour:
     portraitSprite: {fileID: -6293861684711348968, guid: ecdeec282b28f1c4a891851f22256aff, type: 3}
     portraitImage: {fileID: 0}
   - actorId: 3
-    portraitSprite: {fileID: -6149254169742925068, guid: 68b33b625c898204e89171b86a486749, type: 3}
+    portraitSprite: {fileID: 1683116014843847875, guid: 072dec227c03311439a247dbb9012ec3, type: 3}
     portraitImage: {fileID: 0}
   - actorId: 4
     portraitSprite: {fileID: -851320148736375, guid: 59baa25f31c58594589958034d5214b6, type: 3}
     portraitImage: {fileID: 0}
   - actorId: 5
-    portraitSprite: {fileID: 3589095124512063217, guid: 26943ea94e852a04abd10c6ad8447da6, type: 3}
+    portraitSprite: {fileID: 7694712343530924960, guid: c12f6758a30f58740a4d3d0dc4acd985, type: 3}
     portraitImage: {fileID: 0}
   typingSpeed: 0.05
   actors:

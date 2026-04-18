@@ -6,11 +6,26 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/StartScene.unity
+    guid: 8e3c8ccf500398c459da3e4d14260c11
+  - enabled: 1
     path: Assets/Scenes/MengPoQIao.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
   - enabled: 1
     path: Assets/Scenes/BaiYunPu_Day.unity
     guid: 5f40da2eb31ed094292d40da5c4ef95f
+  - enabled: 1
+    path: Assets/Scenes/OldTemple.unity
+    guid: 8e05c1d03a85f0d4f8d4fc2645e3a155
+  - enabled: 1
+    path: Assets/Scenes/Zhu.unity
+    guid: a0a797f4ea59c984cbbe265306f87682
+  - enabled: 1
+    path: Assets/Scenes/BaiYunPu_Night.unity
+    guid: aa8b15210a0666944af30bc8d9d3bb9b
+  - enabled: 1
+    path: Assets/Scenes/BossFight.unity
+    guid: a32a9794a9d5f45439135f25888b6cb6
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

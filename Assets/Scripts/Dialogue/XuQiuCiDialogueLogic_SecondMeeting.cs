@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 许秋慈 · 场景二（后续剧情）：对白文件《孟忘和肉包子的第二次》。
@@ -18,6 +19,10 @@ public class XuQiuCiDialogueLogic_SecondMeeting : DialogueLogicBase
 
     [Header("Quest（可选）")]
     [SerializeField] private string completeOnFirstTalkQuestId;
+
+    [Header("场景切换")]
+    [Tooltip("《第二次》对白首次播完（存档从 Initial→TalkedOnce）后进入的场景")]
+    [SerializeField] private string nextSceneAfterSecondMeeting = "BossFight";
 
     public XuQiuCiSecondState CurrentStateEnum => (XuQiuCiSecondState)currentState;
 
@@ -48,13 +53,23 @@ public class XuQiuCiDialogueLogic_SecondMeeting : DialogueLogicBase
 
     public override void OnDialogueEnd()
     {
-        if (currentState == (int)XuQiuCiSecondState.Initial)
+        bool firstCompletion = currentState == (int)XuQiuCiSecondState.Initial;
+
+        if (firstCompletion)
         {
             TryCompleteFirstTalkQuest();
             currentState = (int)XuQiuCiSecondState.TalkedOnce;
         }
 
         base.OnDialogueEnd();
+
+        if (firstCompletion && !string.IsNullOrEmpty(nextSceneAfterSecondMeeting))
+        {
+            if (SceneTransition.instance != null)
+                SceneTransition.instance.TransitionToScene(nextSceneAfterSecondMeeting);
+            else
+                SceneManager.LoadScene(nextSceneAfterSecondMeeting);
+        }
     }
 
     private void TryCompleteFirstTalkQuest()

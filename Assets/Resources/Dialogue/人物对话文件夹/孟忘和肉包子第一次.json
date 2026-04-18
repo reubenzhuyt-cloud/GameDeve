@@ -1,0 +1,241 @@
+{
+  "DialogueName": "NewDialogue",
+  "nodes": [
+    {
+      "nodeId": 0,
+      "actorId": 0,
+      "dialogueText": "你是谁？",
+      "nextNodeIndex": 1,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 1,
+      "actorId": 4,
+      "dialogueText": "你能看到我？",
+      "nextNodeIndex": 2,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 2,
+      "actorId": 4,
+      "dialogueText": "三年了……你是第一个能看见我的。",
+      "nextNodeIndex": 3,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 3,
+      "actorId": 4,
+      "dialogueText": "说出来你不要害怕",
+      "nextNodeIndex": 4,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 4,
+      "actorId": 4,
+      "dialogueText": "我是个鬼呦",
+      "nextNodeIndex": 5,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 5,
+      "actorId": 0,
+      "dialogueText": "……我知道。",
+      "nextNodeIndex": 6,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 6,
+      "actorId": 4,
+      "dialogueText": "别骗人！你要是知道？那你怎么不跑？",
+      "nextNodeIndex": 7,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 7,
+      "actorId": 0,
+      "dialogueText": "。。。",
+      "nextNodeIndex": 8,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 8,
+      "actorId": 4,
+      "dialogueText": "你刚才吃的米饭，是我给的。你放心吃，是正经的米饭，不是泥沙变的，也不是虫子变的。",
+      "nextNodeIndex": 9,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 9,
+      "actorId": 0,
+      "dialogueText": "你为什么要给我吃的",
+      "nextNodeIndex": 10,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 10,
+      "actorId": 4,
+      "dialogueText": "因为……你饿了啊。",
+      "nextNodeIndex": 11,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 11,
+      "actorId": 4,
+      "dialogueText": "饿的人，不该吃饭吗？",
+      "nextNodeIndex": 12,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 12,
+      "actorId": 0,
+      "dialogueText": "那么。。我谢谢你",
+      "nextNodeIndex": 13,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 13,
+      "actorId": 4,
+      "dialogueText": "你可不能白吃呀，你得帮我个忙！",
+      "nextNodeIndex": 14,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 14,
+      "actorId": 0,
+      "dialogueText": "什么忙？能有饭吃，我一定帮！",
+      "nextNodeIndex": 15,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 15,
+      "actorId": 4,
+      "dialogueText": "可是，我快没有米了。。。",
+      "nextNodeIndex": 16,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 16,
+      "actorId": 0,
+      "dialogueText": "为什么？",
+      "nextNodeIndex": 17,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 17,
+      "actorId": 4,
+      "dialogueText": "我不是凭空变出米饭的，我没有那么大的本事",
+      "nextNodeIndex": 18,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 18,
+      "actorId": 4,
+      "dialogueText": "白云浦东边有个朱家庄，庄上有个坏财主，叫朱圆。他家的粮仓里，粮食堆得像山一样高，老鼠在里面打了洞，一年四季都不用愁吃的",
+      "nextNodeIndex": 19,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 19,
+      "actorId": 4,
+      "dialogueText": "给庙里的人吃的米都是从那里拿的。",
+      "nextNodeIndex": 20,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 20,
+      "actorId": 0,
+      "dialogueText": "朱圆发现了？",
+      "nextNodeIndex": 21,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 21,
+      "actorId": 4,
+      "dialogueText": "他请了道士，在粮仓的门上贴了符。",
+      "nextNodeIndex": 22,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 22,
+      "actorId": 4,
+      "dialogueText": "我进不去了。",
+      "nextNodeIndex": 23,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 23,
+      "actorId": 4,
+      "dialogueText": "但是，你虽然身上没有五谷的气味，还能看见我，但你不是鬼，道士的符对你没有用",
+      "nextNodeIndex": 24,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 24,
+      "actorId": 4,
+      "dialogueText": "那符贴在门上，红纸黄字，你一眼就能看见",
+      "nextNodeIndex": 26,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 25,
+      "actorId": 4,
+      "dialogueText": "我叫许秋慈。许是言午许，秋是秋天的秋，慈是慈悲的慈。",
+      "nextNodeIndex": 27,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 26,
+      "actorId": 0,
+      "dialogueText": "",
+      "nextNodeIndex": -1,
+      "isChoiceNode": true,
+      "animationTrigger": "",
+      "choices": [
+        {
+          "choiceText": "可否告知姓名，好有个称谓",
+          "targetNodeIndex": 25,
+          "conditions": []
+        },
+        {
+          "choiceText": "行，我马上动身",
+          "targetNodeIndex": 27,
+          "conditions": []
+        }
+      ]
+    },
+    {
+      "nodeId": 27,
+      "actorId": 4,
+      "dialogueText": "谢谢你",
+      "nextNodeIndex": -1,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    }
+  ]
+}

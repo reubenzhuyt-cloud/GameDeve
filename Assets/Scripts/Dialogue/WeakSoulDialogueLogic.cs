@@ -26,7 +26,9 @@ public class WeakSoulDialogueLogic : DialogueLogicBase
         base.Awake();
         if (weakSoul == null)
         {
-            weakSoul = GetComponent<WeakSoul>();
+            weakSoul = GetComponent<WeakSoul>()
+                ?? GetComponentInChildren<WeakSoul>(true)
+                ?? GetComponentInParent<WeakSoul>();
         }
     }
     

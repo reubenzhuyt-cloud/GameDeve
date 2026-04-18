@@ -8,11 +8,14 @@ public class PlayerChatState : PlayerState
 
     }
     private UnityAction<DialogueData> onDialogueEndAction;
+    /// <summary>本帧是否走了「Q 光芒 → WeakSoulLightSoothe」路径；此时不应再对 <see cref="Player.dialogueLogic"/> 调 <c>OnDialogueEnd</c>（避免误改 <see cref="WeakSoulDialogueLogic"/> 等状态）。</summary>
+    private bool _sessionWasLightSoothe;
 
     public override void Enter()
     {
         base.Enter();
         player.SetVelocity(0);
+        _sessionWasLightSoothe = false;
 
         onDialogueEndAction = (DialogueData dialogue) =>
         {
@@ -31,6 +34,7 @@ public class PlayerChatState : PlayerState
 
             if (!string.IsNullOrEmpty(player.pendingLightSootheDialogueFile))
             {
+                _sessionWasLightSoothe = true;
                 string file = player.pendingLightSootheDialogueFile;
                 player.pendingLightSootheDialogueFile = null;
                 DialogueSystem.instance.StartDialogue(file);
@@ -87,7 +91,7 @@ public class PlayerChatState : PlayerState
 
         DialogueSystem.instance.onDialogueEnd.RemoveListener(onDialogueEndAction);
         
-        if (player.dialogueLogic != null)
+        if (player.dialogueLogic != null && !_sessionWasLightSoothe)
         {
             DialogueSystem.instance.onChoiceSelected.RemoveListener(OnChoiceSelected);
             player.dialogueLogic.OnDialogueEnd();

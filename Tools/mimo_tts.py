@@ -64,33 +64,38 @@ ACTOR_NAMES: dict[int, str] = {
     3: "Narrator",
 }
 
-# Boss 配音：每条「整段」写死（含中文括号里的语气说明），直接作为 assistant.content 发送，
-# 不再在代码里拼接 <style> / 风格变量。改台词或语气请只改下表字符串。
-# 游戏内 UI 仍以 BossBattleDialogueBox 的纯台词为准；此处可含（语气）以引导 TTS。
-BOSS_TTS_FIXED_LINES: list[tuple[str, str]] = [
+# Boss 配音：正文只用「界面纯台词」（与 BossBattleDialogueBox 常量一致），语气走 style，
+# 由 call_mimo_tts 拼成 <style>...</style>+正文，避免把（括号说明）念进语音。
+BOSS_TTS_FIXED_LINES: list[tuple[str, str, str]] = [
     (
         "boss_battle_start",
-        "（压着哭腔，语气里带怒，音量收着，别说太大声）我不想害人。可我更不想被人害。",
+        "我不想害人。可我更不想被人害。",
+        "哭腔 压抑 愤怒 低声",
     ),
     (
         "boss_battle_cast_skill_1",
-        "（带着哭腔，像气笑了，又有点呛人）你们……都有道理！",
+        "你们……都有道理！",
+        "哭腔 气笑 呛人",
     ),
     (
         "boss_battle_cast_skill_2",
-        "（快哭出来，压着嗓子喊，别太炸麦）那我呢？那我呢！",
+        "别想带我走",
+        "哭腔 压低 喊",
     ),
     (
         "boss_battle_hurt",
-        "（忍痛发抖，嘴硬，声音别洪亮）我不疼……我不疼……",
+        "我不疼……我不疼……",
+        "忍痛 发抖 嘴硬 轻声",
     ),
     (
         "boss_battle_phase2",
-        "（哭腔略收，更冷更硬，仍带点鼻音）我死过一次了。我不怕。",
+        "我死过一次了。我不怕。",
+        "冷淡 鼻音 坚定",
     ),
     (
         "boss_battle_near_death",
-        "（气若游丝，像要断气，很轻）天……快亮了……",
+        "天……快亮了……",
+        "气若游丝 极轻",
     ),
 ]
 
@@ -321,11 +326,11 @@ def run_boss_mimo_batch(
             print(f"警告: 未识别的 stem: {missing}")
 
     print(f"Boss MiMo -> {BOSS_AUDIO_DIR}")
-    for stem, content in lines:
+    for stem, text, style in lines:
         out = BOSS_AUDIO_DIR / f"{stem}.wav"
         print(f"  -> {out.name}")
         sys.stdout.flush()
-        pcm = call_mimo_tts(content, "")
+        pcm = call_mimo_tts(text, style)
         if not pcm:
             print("     失败")
             continue

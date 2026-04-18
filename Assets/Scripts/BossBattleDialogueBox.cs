@@ -30,11 +30,14 @@ public sealed class BossBattleDialogueBox : MonoBehaviour
     [Tooltip("无音频时最短显示时长（秒）。")]
     [SerializeField] private float minVisibleSecondsWhenNoClip = 2f;
 
-    /// <summary>与生成脚本 Tools/generate_tts.py（boss / edge-boss）中台词一致。</summary>
+    /// <summary>
+    /// 界面纯台词（与 MiMo 合成正文一致；语气在 mimo_tts 的 style 字段，不写入台词）。
+    /// 生成：<c>python Tools/generate_tts.py boss</c>。
+    /// </summary>
     public const string LineBattleStart = "我不想害人。可我更不想被人害。";
 
     public const string LineCastSkillFirst = "你们……都有道理！";
-    public const string LineCastSkillSecond = "那我呢？那我呢！";
+    public const string LineCastSkillSecond = "别想带我走";
     public const string LineHurt = "我不疼……我不疼……";
     public const string LinePhase2 = "我死过一次了。我不怕。";
     public const string LineNearDeath = "天……快亮了……";

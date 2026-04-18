@@ -1,0 +1,29 @@
+{
+    "DialogueName": "虚弱游魂-释然",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 2,
+            "dialogueText": "……我不饿了……也不冷了……好像……终于可以往前走了……",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "一路走好。",
+            "nextNodeIndex": 2,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 2,
+            "actorId": 2,
+            "dialogueText": "……谢谢你……引魂之人……",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

@@ -3,7 +3,7 @@
   "nodes": [
     {
       "nodeId": 0,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "你来了，那符……",
       "nextNodeIndex": 1,
       "isChoiceNode": false,
@@ -19,7 +19,7 @@
     },
     {
       "nodeId": 2,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "你不是一般人。",
       "nextNodeIndex": 3,
       "isChoiceNode": false,
@@ -35,7 +35,7 @@
     },
     {
       "nodeId": 4,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "我起初以为你只是阴气重，能看见我，可现在我知道了",
       "nextNodeIndex": 5,
       "isChoiceNode": false,
@@ -43,7 +43,7 @@
     },
     {
       "nodeId": 5,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "吹过你的风，有苦水的味道。",
       "nextNodeIndex": 6,
       "isChoiceNode": false,
@@ -51,7 +51,7 @@
     },
     {
       "nodeId": 6,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "眼前这条河，叫苦水。人们说是众生眼泪汇聚的。",
       "nextNodeIndex": 7,
       "isChoiceNode": false,
@@ -59,7 +59,7 @@
     },
     {
       "nodeId": 7,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "你在那边，见惯了死别。有流过眼泪吗？",
       "nextNodeIndex": 8,
       "isChoiceNode": false,
@@ -67,7 +67,7 @@
     },
     {
       "nodeId": 8,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "你来，其实是带我走的吗？",
       "nextNodeIndex": 9,
       "isChoiceNode": false,
@@ -83,7 +83,7 @@
     },
     {
       "nodeId": 10,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "我不要，我不能走。",
       "nextNodeIndex": 11,
       "isChoiceNode": false,
@@ -91,7 +91,7 @@
     },
     {
       "nodeId": 11,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "庙里的人，他们还会饿的。冬天快到了，逃荒的人会越来越多。我不能再让他们挨饿了。",
       "nextNodeIndex": 12,
       "isChoiceNode": false,
@@ -127,7 +127,7 @@
     },
     {
       "nodeId": 14,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "我知道",
       "nextNodeIndex": 15,
       "isChoiceNode": false,
@@ -135,7 +135,7 @@
     },
     {
       "nodeId": 15,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "吴门老家的莲花，都是六月里开。我娘说，我生在三月，桃花都谢了，杏花也谢了，就剩几棵晚梅，还零零星星地挂着。",
       "nextNodeIndex": 16,
       "isChoiceNode": false,
@@ -143,7 +143,7 @@
     },
     {
       "nodeId": 16,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "可我做错了吗？为什么是我呢？",
       "nextNodeIndex": 17,
       "isChoiceNode": false,
@@ -151,7 +151,7 @@
     },
     {
       "nodeId": 17,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "为什么是他们呢？",
       "nextNodeIndex": 18,
       "isChoiceNode": false,
@@ -159,7 +159,7 @@
     },
     {
       "nodeId": 18,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "为什么这个世道，要把人变成这样？",
       "nextNodeIndex": 19,
       "isChoiceNode": false,
@@ -183,7 +183,7 @@
     },
     {
       "nodeId": 21,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "（伸出手，双指一夹，把那符纸夹在指间。）",
       "nextNodeIndex": 22,
       "isChoiceNode": false,
@@ -199,7 +199,7 @@
     },
     {
       "nodeId": 23,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "我知道。你是好人",
       "nextNodeIndex": 24,
       "isChoiceNode": false,
@@ -207,7 +207,7 @@
     },
     {
       "nodeId": 24,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "好人也会做坏事的。我嫁过去之前，我娘也是这么说的。",
       "nextNodeIndex": 25,
       "isChoiceNode": false,
@@ -215,7 +215,7 @@
     },
     {
       "nodeId": 25,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "你走吧。",
       "nextNodeIndex": 26,
       "isChoiceNode": false,
@@ -231,7 +231,7 @@
     },
     {
       "nodeId": 27,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "我见过你们这种人。你们总是有道理的。你们总是对的。你们说，人死了就该走，该去投胎，该喝了那碗汤，把什么都忘了。",
       "nextNodeIndex": 28,
       "isChoiceNode": false,
@@ -239,7 +239,7 @@
     },
     {
       "nodeId": 28,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "可我不想忘。",
       "nextNodeIndex": 29,
       "isChoiceNode": false,
@@ -247,7 +247,7 @@
     },
     {
       "nodeId": 29,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "我不想忘了吴门的莲花，不想忘了我娘，不想忘了那些饿着肚子走在这条路上的人。我不想忘了那一刀有多痛，不想忘了为什么会有那一刀。我不想忘了人是怎么变成鬼的",
       "nextNodeIndex": 30,
       "isChoiceNode": false,
@@ -255,7 +255,7 @@
     },
     {
       "nodeId": 30,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "然后你们说，这样不好。这样不对。这样会变成厉鬼，会害人，会被天收。",
       "nextNodeIndex": 31,
       "isChoiceNode": false,
@@ -263,7 +263,7 @@
     },
     {
       "nodeId": 31,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "我害过谁？我做错了吗？",
       "nextNodeIndex": 32,
       "isChoiceNode": false,
@@ -271,7 +271,7 @@
     },
     {
       "nodeId": 32,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "你说，我这样的人，该不该被超度？",
       "nextNodeIndex": 34,
       "isChoiceNode": false,
@@ -279,7 +279,7 @@
     },
     {
       "nodeId": 33,
-      "actorId": 4,
+      "actorId": 6,
       "dialogueText": "那就不用你动手了。",
       "nextNodeIndex": -1,
       "isChoiceNode": false,

@@ -115,7 +115,7 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
         }
     }
 
-    public void SpawnOrbAtBoardLocal(Vector3 boardLocalSpawnPosition, float referenceScaleForSize)
+    public void SpawnOrbAtBoardLocal(Vector3 boardLocalSpawnPosition, float referenceScaleForSize, Color tint)
     {
         if (orbPrefab == null || boardRoot == null)
         {
@@ -144,6 +144,7 @@ public sealed class Match3DamageSwarmManager : MonoBehaviour, IMatch3DamageProje
         {
             sr.enabled = true;
             sr.sortingOrder = 400;
+            sr.color = tint;
         }
 
         go.SetActive(true);

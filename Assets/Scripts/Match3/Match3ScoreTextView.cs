@@ -43,6 +43,15 @@ public sealed class Match3ScoreTextView : MonoBehaviour
         return false;
     }
 
+    public void SetTextColor(Color color)
+    {
+        ResolveTargetsIfNeeded();
+        if (tmp3d != null)
+            tmp3d.color = color;
+        if (tmpAny != null)
+            tmpAny.color = color;
+    }
+
     private static void EnsurePopupVisible(TextMeshPro tmp3d, TMP_Text tmpAny)
     {
         if (tmp3d != null)

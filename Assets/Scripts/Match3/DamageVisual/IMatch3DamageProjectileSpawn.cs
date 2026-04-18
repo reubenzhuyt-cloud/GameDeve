@@ -4,5 +4,6 @@ using UnityEngine;
 public interface IMatch3DamageProjectileSpawn
 {
     /// <param name="referenceScaleForSize">用于决定飞弹相对大小的参考缩放（如得分飘字 scale）</param>
-    void SpawnOrbAtBoardLocal(Vector3 boardLocalSpawnPosition, float referenceScaleForSize);
+    /// <param name="tint">飞弹精灵着色（与消除颜色一致）</param>
+    void SpawnOrbAtBoardLocal(Vector3 boardLocalSpawnPosition, float referenceScaleForSize, Color tint);
 }

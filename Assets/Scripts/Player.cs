@@ -19,6 +19,10 @@ public class Player : Entity
     public DialogueLogicBase dialogueLogic;
     public NPC currentNPC;
     public InteractableObject currentInteractable;
+    /// <summary>由 <see cref="InteractableObject"/> 距离检测注册的交互源（与 Trigger「CanInteractWith」并列，二者择一显示）。</summary>
+    private InteractableObject _proximityInteractable;
+    /// <summary>当前进入的 CanInteractWith 触发器，用于对话结束后恢复 F 提示（仍在范围内时）。</summary>
+    private Collider2D _activeInteractTrigger;
     public float XInput;
     public int playerFaceRight { get; private set; } = -1;
     public StateMachine<PlayerState> stateMachine { get; private set; }
@@ -70,10 +74,9 @@ public class Player : Entity
         base.Start();
         stateMachine.Initialize(idleState);
 
-        if (interactionUGUI != null && UIManager.instance != null)
-        {
-            UIManager.instance.RegisterPanel(UIType.InteractionTip, interactionUGUI.gameObject, false, true);
-        }
+        EnsureInteractionTipRegistered();
+        if (interactionUGUI != null)
+            UIManager.EnsureCanvasRootVisible(interactionUGUI.gameObject);
     }
     public override void Update()
     {
@@ -99,7 +102,11 @@ public class Player : Entity
             }
         }
         
-        if (Input.GetKeyDown(KeyCode.Q) && canUseLightSkill && stateMachine.currentState != lightState)
+        // 对话中禁止 Q：否则会离开 Chat 再进 Light，打断安抚对白且 Dialogue 未关闭
+        if (Input.GetKeyDown(KeyCode.Q) && canUseLightSkill
+            && stateMachine.currentState != lightState
+            && stateMachine.currentState != chatState
+            && !inDialogue)
         {
             stateMachine.ChangeState(lightState);
         }
@@ -161,8 +168,33 @@ public class Player : Entity
     {
         return IsGroundDetected();
     }
+    /// <summary>切场景或 <see cref="UIManager.RemoveStalePanelReferences"/> 后须重新注册，否则 <see cref="UIManager.Show"/> 找不到 InteractionTip。</summary>
+    /// <remarks>
+    /// 不在此做「引用不一致就再 Register」：RegisterPanel(startHidden:true) 会立刻 HideImmediate，若与 Show 不同帧易导致提示永久不显示。
+    /// 仅当未注册或字典里引用已销毁时再注册。
+    /// </remarks>
+    private void EnsureInteractionTipRegistered()
+    {
+        if (interactionUGUI == null || UIManager.instance == null)
+            return;
+
+        if (!UIManager.instance.IsPanelRegistered(UIType.InteractionTip))
+        {
+            UIManager.instance.RegisterPanel(UIType.InteractionTip, interactionUGUI.gameObject, false, true);
+            return;
+        }
+
+        var go = UIManager.instance.GetPanel(UIType.InteractionTip);
+        if (go == null)
+        {
+            UIManager.instance.UnregisterPanel(UIType.InteractionTip);
+            UIManager.instance.RegisterPanel(UIType.InteractionTip, interactionUGUI.gameObject, false, true);
+        }
+    }
+
     public void ShowInteractionUGUI(bool _show)
     {
+        EnsureInteractionTipRegistered();
         if (dialogueObj != null)
         {
             Vector3 worldPos = dialogueObj.transform.position + new Vector3(2f, 0.3f, 0);
@@ -177,7 +209,10 @@ public class Player : Entity
             if (UIManager.instance != null)
             {
                 if (_show)
+                {
                     UIManager.instance.Show(UIType.InteractionTip);
+                    interactionUGUI.gameObject.SetActive(true);
+                }
                 else
                     UIManager.instance.Hide(UIType.InteractionTip);
             }
@@ -198,6 +233,8 @@ public class Player : Entity
         if (interactionUGUI == null)
             return;
 
+        EnsureInteractionTipRegistered();
+
         if (visible)
         {
             interactionUGUI.text = message;
@@ -208,7 +245,10 @@ public class Player : Entity
         if (UIManager.instance != null)
         {
             if (visible)
+            {
                 UIManager.instance.Show(UIType.InteractionTip);
+                interactionUGUI.gameObject.SetActive(true);
+            }
             else
                 UIManager.instance.Hide(UIType.InteractionTip);
         }
@@ -216,15 +256,79 @@ public class Player : Entity
             interactionUGUI.gameObject.SetActive(visible);
     }
 
+    /// <summary>
+    /// <see cref="InteractableObject"/> 用 OverlapCircle 检测到玩家时调用：与「带 CanInteractWith 的 Trigger」一样，写入对话引用并显示 F 提示。
+    /// </summary>
+    public void RegisterProximityInteractable(InteractableObject zone, string prompt, Vector3 worldAnchor)
+    {
+        if (zone == null)
+            return;
+
+        if (_proximityInteractable != null && _proximityInteractable != zone)
+            UnregisterProximityInteractable(_proximityInteractable);
+
+        _proximityInteractable = zone;
+        dialogueLogic = zone.GetComponent<DialogueLogicBase>();
+        dialogueObj = zone.GetComponent<DialogueObj>();
+        currentNPC = zone.GetComponent<NPC>();
+        currentInteractable = zone;
+
+        string msg = string.IsNullOrEmpty(prompt) ? "按 F 对话" : prompt;
+        SetWorldInteractionTip(true, msg, worldAnchor);
+    }
+
+    public void UnregisterProximityInteractable(InteractableObject zone)
+    {
+        if (zone == null || _proximityInteractable != zone)
+            return;
+
+        _proximityInteractable = null;
+
+        if (ReferenceEquals(currentInteractable, zone))
+            currentInteractable = null;
+
+        var dl = zone.GetComponent<DialogueLogicBase>();
+        if (ReferenceEquals(dialogueLogic, dl))
+            dialogueLogic = null;
+
+        var dObj = zone.GetComponent<DialogueObj>();
+        if (ReferenceEquals(dialogueObj, dObj))
+            dialogueObj = null;
+
+        var npc = zone.GetComponent<NPC>();
+        if (ReferenceEquals(currentNPC, npc))
+            currentNPC = null;
+
+        SetWorldInteractionTip(false, "", Vector3.zero);
+    }
+
+    /// <summary>
+    /// 对话结束时 DialoguePanel 会按规则隐藏 InteractionTip；若人仍站在交互范围内，须手动恢复提示。
+    /// </summary>
+    public void TryRefreshInteractionTipAfterDialogue()
+    {
+        EnsureInteractionTipRegistered();
+
+        if (_proximityInteractable != null && _proximityInteractable.IsPlayerInRange())
+        {
+            _proximityInteractable.ReregisterPlayerTip();
+            return;
+        }
+
+        if (_activeInteractTrigger != null && _activeInteractTrigger.CompareTag("CanInteractWith"))
+            ShowInteractionUGUI(true);
+    }
+
     public void OnTriggerEnter2D(Collider2D other)
     {
         Debug.Log("entered the trigger");
         if (other.CompareTag("CanInteractWith"))
         {
-            dialogueObj = other.GetComponent<DialogueObj>();
-            dialogueLogic = other.GetComponent<DialogueLogicBase>();
-            currentNPC = other.GetComponent<NPC>();
-            currentInteractable = other.GetComponent<InteractableObject>();
+            _activeInteractTrigger = other;
+            dialogueObj = other.GetComponent<DialogueObj>() ?? other.GetComponentInParent<DialogueObj>();
+            dialogueLogic = other.GetComponent<DialogueLogicBase>() ?? other.GetComponentInParent<DialogueLogicBase>();
+            currentNPC = other.GetComponent<NPC>() ?? other.GetComponentInParent<NPC>();
+            currentInteractable = other.GetComponent<InteractableObject>() ?? other.GetComponentInParent<InteractableObject>();
             ShowInteractionUGUI(true);
 
         }
@@ -254,11 +358,18 @@ public class Player : Entity
         Debug.Log("exited the trigger");
         if (other.CompareTag("CanInteractWith"))
         {
+            if (_activeInteractTrigger == other)
+                _activeInteractTrigger = null;
+
             ShowInteractionUGUI(false);
             dialogueObj = null;
             dialogueLogic = null;
             currentNPC = null;
             currentInteractable = null;
+
+            // 仍处在 InteractableObject 距离范围内时（例如刚离开别的 NPC 的 Trigger），恢复近距离交互提示
+            if (_proximityInteractable != null && _proximityInteractable.IsPlayerInRange())
+                _proximityInteractable.ReregisterPlayerTip();
         }
     }
 

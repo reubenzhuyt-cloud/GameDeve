@@ -160,6 +160,8 @@ public class UIManager : MonoBehaviour
     public void OnSceneUIReady()
     {
         ResolveGameplayTipReference();
+        if (gameplayTipUI != null)
+            EnsureCanvasRootVisible(gameplayTipUI.gameObject);
         gameplayTipUI?.PlayIntroFromManager();
     }
 
@@ -486,6 +488,41 @@ public class UIManager : MonoBehaviour
     }
 
     #region Static Methods
+
+    /// <summary>
+    /// Shared HUD Canvas prefab may keep <see cref="CanvasGroup.alpha"/> at 0 on the root <see cref="Canvas"/>;
+    /// UIManager only toggles child panels, so the whole tree stays invisible until this is fixed.
+    /// Only bumps alpha when it is effectively zero (does not override intentional partial fades).
+    /// </summary>
+    public static void EnsureCanvasRootVisible(GameObject leaf)
+    {
+        if (leaf == null)
+            return;
+
+        var chain = new List<Transform>();
+        for (Transform t = leaf.transform; t != null; t = t.parent)
+            chain.Add(t);
+        for (int i = chain.Count - 1; i >= 0; i--)
+        {
+            if (!chain[i].gameObject.activeSelf)
+                chain[i].gameObject.SetActive(true);
+        }
+
+        for (Transform t = leaf.transform; t != null; t = t.parent)
+        {
+            var canvas = t.GetComponent<Canvas>();
+            if (canvas == null)
+                continue;
+            var cg = canvas.GetComponent<CanvasGroup>();
+            if (cg != null && cg.alpha < 0.01f)
+            {
+                cg.alpha = 1f;
+                cg.interactable = true;
+                cg.blocksRaycasts = true;
+            }
+            break;
+        }
+    }
 
     public static bool IsUIBlocked(UIType type)
     {

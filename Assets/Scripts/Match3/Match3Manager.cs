@@ -515,10 +515,10 @@ public sealed class Match3Manager : MonoBehaviour
         {
             if (_sim.IsCellLocked(r, c))
                 continue;
-            if (damageSwarm != null)
-                damageSwarm.SpawnOrbAtBoardLocal(CellLocalPosition(r, c), scoreTextScaleFactor);
             var gem = _cells[r, c];
             int type = _sim.GetCell(r, c);
+            if (damageSwarm != null && type >= Match3BoardSimulator.MinType && type <= Match3BoardSimulator.MaxType)
+                damageSwarm.SpawnOrbAtBoardLocal(CellLocalPosition(r, c), scoreTextScaleFactor, Match3GemPalette.GetAccentColorForGemType(type));
             if (type >= Match3BoardSimulator.MinType && type <= Match3BoardSimulator.MaxType)
             {
                 colorCounts[type]++;
@@ -580,7 +580,7 @@ public sealed class Match3Manager : MonoBehaviour
             _colorScores[type] += add;
             OnEliminationDamage?.Invoke(add, type);
             Vector3 p = colorPosSums[type] / cnt;
-            SpawnScoreText(p, $"+{add}");
+            SpawnScoreText(p, $"+{add}", type);
         }
 
         LogColorScores();
@@ -725,7 +725,7 @@ public sealed class Match3Manager : MonoBehaviour
         }
     }
 
-    private void SpawnScoreText(Vector3 localPos, string text)
+    private void SpawnScoreText(Vector3 localPos, string text, int gemType)
     {
         if (scoreTextPrefab == null)
             return;
@@ -743,6 +743,7 @@ public sealed class Match3Manager : MonoBehaviour
         go.transform.localScale = Vector3.one * Mathf.Max(0.01f, scoreTextScaleFactor);
 
         bool assigned = view.SetScoreText(text);
+        view.SetTextColor(Match3GemPalette.GetAccentColorForGemType(gemType));
         if (!assigned)
             Debug.LogWarning("[Match3] scoreTextPrefab has no supported text component in Match3ScoreTextView.");
 

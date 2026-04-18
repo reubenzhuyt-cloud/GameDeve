@@ -21,10 +21,17 @@ public class PlayerChatState : PlayerState
         {
             if (player.pendingLightSootheSoul != null)
             {
+                // 与 F 对话进度对齐：光芒安抚结束视为进入「被安抚」剧情状态（若同物体挂了 WeakSoulDialogueLogic）
+                var weakSoulLogic = player.pendingLightSootheSoul.GetComponent<WeakSoulDialogueLogic>()
+                    ?? player.pendingLightSootheSoul.GetComponentInParent<WeakSoulDialogueLogic>();
+                weakSoulLogic?.SetBeingSoothed();
+
                 player.pendingLightSootheSoul.CompleteLightSoothe();
                 player.StartLightSkillCD();
                 player.pendingLightSootheSoul = null;
             }
+
+            player.TryRefreshInteractionTipAfterDialogue();
             player.stateMachine.ChangeState(player.idleState);
         };
         
@@ -89,12 +96,15 @@ public class PlayerChatState : PlayerState
     {
         base.Exit();
 
-        DialogueSystem.instance.onDialogueEnd.RemoveListener(onDialogueEndAction);
-        
-        if (player.dialogueLogic != null && !_sessionWasLightSoothe)
+        if (DialogueSystem.instance != null)
         {
-            DialogueSystem.instance.onChoiceSelected.RemoveListener(OnChoiceSelected);
-            player.dialogueLogic.OnDialogueEnd();
+            DialogueSystem.instance.onDialogueEnd.RemoveListener(onDialogueEndAction);
+
+            if (player.dialogueLogic != null && !_sessionWasLightSoothe)
+            {
+                DialogueSystem.instance.onChoiceSelected.RemoveListener(OnChoiceSelected);
+                player.dialogueLogic.OnDialogueEnd();
+            }
         }
 
         onDialogueEndAction = null;

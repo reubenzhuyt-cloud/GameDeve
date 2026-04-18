@@ -1,0 +1,29 @@
+{
+    "DialogueName": "虚弱游魂-被安抚中",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 2,
+            "dialogueText": "……那道光……又来了……像有人轻轻拍着我的背……",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "我在这里。",
+            "nextNodeIndex": 2,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 2,
+            "actorId": 2,
+            "dialogueText": "……谢谢你……让我想起来……生前也有人……这样对我笑过……",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

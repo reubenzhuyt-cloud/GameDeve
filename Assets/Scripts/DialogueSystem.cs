@@ -1,18 +1,21 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Collections;
 
 /// <summary>
-/// Maps <see cref="DialogueNodeData.actorId"/> to a portrait sprite for dialogue UI.
+/// Maps <see cref="DialogueNodeData.actorId"/> to a portrait for dialogue UI.
+/// Assign <see cref="portraitSprite"/>; optionally <see cref="portraitImage"/> for a dedicated slot (otherwise uses <see cref="DialogueSystem"/> default image).
 /// </summary>
 [System.Serializable]
 public class DialogueActorPortraitEntry
 {
     public int actorId;
     public Sprite portraitSprite;
+    [Tooltip("Optional. If set, this Image is shown for this actor; if empty, uses DialogueSystem default portrait Image.")]
+    public Image portraitImage;
 }
 
 [System.Serializable]
@@ -59,7 +62,8 @@ public class DialogueSystem : MonoBehaviour
         "无主之魂",
         "渔夫",
         "肉包子",
-        "佃户"
+        "佃户",
+        "许秋慈"
     };
     [Header("UI References")]
     [SerializeField] private GameObject dialoguePanel;
@@ -68,7 +72,7 @@ public class DialogueSystem : MonoBehaviour
     [SerializeField] private GameObject choicePanel;
     [SerializeField] private GameObject choiceButtonPrefab;
     [Header("Actor portraits (立绘)")]
-    [Tooltip("Default portrait Image in scene. Keep it disabled initially; code only sets sprite and toggles active.")]
+    [Tooltip("Default portrait Image when an entry does not assign its own Image. Keep disabled in scene; runtime sets sprite and toggles active.")]
     [SerializeField] private Image actorPortraitImage;
     [Tooltip("actorId → sprite. When a node uses that actorId, the sprite is shown while they speak.")]
     [SerializeField] private List<DialogueActorPortraitEntry> actorPortraitEntries = new();
@@ -92,7 +96,7 @@ public class DialogueSystem : MonoBehaviour
     private Coroutine animationCoroutine;
     private ConditionManager conditionManager;
     private AudioSource dialogueAudioSource;
-    private Dictionary<int, Sprite> actorPortraitLookup = new();
+    private Dictionary<int, DialogueActorPortraitEntry> actorPortraitLookup = new();
 
     public UnityEvent<DialogueData> onDialogueEnd = new();
     public UnityEvent<DialogueData> onDialogueStart = new();
@@ -106,21 +110,46 @@ public class DialogueSystem : MonoBehaviour
 
     private void Awake()
     {
-        if (instance == null)
+        // 新场景的 DialogueSystem 会替换旧实例；若新场景未配置 actorPortraitEntries，则继承上一场景已配置的 Sprite，避免第二场景对白立绘全空。
+        if (instance != null && instance != this)
         {
-            instance = this;
+            var old = instance;
+            if (actorPortraitEntries == null || actorPortraitEntries.Count == 0)
+            {
+                if (old.actorPortraitEntries != null && old.actorPortraitEntries.Count > 0)
+                {
+                    actorPortraitEntries = new List<DialogueActorPortraitEntry>();
+                    foreach (var e in old.actorPortraitEntries)
+                    {
+                        if (e == null || e.portraitSprite == null)
+                            continue;
+                        actorPortraitEntries.Add(new DialogueActorPortraitEntry
+                        {
+                            actorId = e.actorId,
+                            portraitSprite = e.portraitSprite,
+                            portraitImage = null
+                        });
+                    }
+                }
+            }
+
+            Destroy(old.gameObject);
         }
-        else
-        {
-            Destroy(gameObject);
-        }
+
+        instance = this;
+
         conditionManager = FindFirstObjectByType<ConditionManager>();
         if (conditionManager == null)
         {
             conditionManager = gameObject.AddComponent<ConditionManager>();
         }
-        choicePanel.GetComponent<RectTransform>().sizeDelta /= 2f;
-        
+
+        ResolveDialogueUiReferencesIfNeeded();
+        if (choicePanel != null)
+            choicePanel.GetComponent<RectTransform>().sizeDelta /= 2f;
+        else
+            Debug.LogWarning("[DialogueSystem] choicePanel is null after resolve — assign ChoicePanel or use Canvas.prefab layout (ChoicePanel).");
+
         dialogueAudioSource = gameObject.AddComponent<AudioSource>();
         dialogueAudioSource.playOnAwake = false;
         dialogueAudioSource.loop = false;
@@ -128,9 +157,21 @@ public class DialogueSystem : MonoBehaviour
         ApplyUnifiedActorMapping();
 
         RebuildActorPortraitLookup();
-        if (actorPortraitImage != null)
-            actorPortraitImage.gameObject.SetActive(false);
+        HideAllPortraitImages();
     }
+
+    private void OnDestroy()
+    {
+        if (instance == this)
+            instance = null;
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        RebuildActorPortraitLookup();
+    }
+#endif
 
     private void ApplyUnifiedActorMapping()
     {
@@ -151,8 +192,77 @@ public class DialogueSystem : MonoBehaviour
         {
             if (entry == null || entry.portraitSprite == null)
                 continue;
-            actorPortraitLookup[entry.actorId] = entry.portraitSprite;
+            actorPortraitLookup[entry.actorId] = entry;
         }
+    }
+
+    private void HideAllPortraitImages()
+    {
+        if (actorPortraitImage != null)
+            actorPortraitImage.gameObject.SetActive(false);
+        foreach (var entry in actorPortraitEntries)
+        {
+            if (entry != null && entry.portraitImage != null)
+                entry.portraitImage.gameObject.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// When only the Canvas root is assigned (or fields are left empty on a shared prefab), bind to
+    /// DialoguePanel / ActorName / DialogueText / ChoicePanel under the shared Canvas prefab hierarchy.
+    /// </summary>
+    private void ResolveDialogueUiReferencesIfNeeded()
+    {
+        if (dialoguePanel == null)
+            return;
+
+        // Common mistake: reference is the whole Canvas — use the DialoguePanel child for show/hide.
+        if (dialoguePanel.GetComponent<Canvas>() != null)
+        {
+            Transform dp = dialoguePanel.transform.Find("DialoguePanel");
+            if (dp != null)
+                dialoguePanel = dp.gameObject;
+        }
+
+        Transform searchRoot = dialoguePanel.transform;
+
+        if (actorNameUGUI == null)
+            actorNameUGUI = FindTmpByHierarchyName(searchRoot, "ActorName");
+        if (dialogueUGUI == null)
+            dialogueUGUI = FindTmpByHierarchyName(searchRoot, "DialogueText");
+        if (choicePanel == null)
+            choicePanel = FindChildGameObjectByName(searchRoot, "ChoicePanel");
+
+        if (actorPortraitImage == null)
+        {
+            var portraitGo = FindChildGameObjectByName(searchRoot, "ActorPortrait");
+            if (portraitGo != null)
+                actorPortraitImage = portraitGo.GetComponent<Image>();
+        }
+    }
+
+    private static TextMeshProUGUI FindTmpByHierarchyName(Transform root, string objectName)
+    {
+        if (root == null)
+            return null;
+        foreach (var tmp in root.GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            if (tmp.gameObject.name == objectName)
+                return tmp;
+        }
+        return null;
+    }
+
+    private static GameObject FindChildGameObjectByName(Transform root, string objectName)
+    {
+        if (root == null)
+            return null;
+        foreach (var t in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.gameObject.name == objectName)
+                return t.gameObject;
+        }
+        return null;
     }
 
     private void Start()
@@ -171,6 +281,22 @@ public class DialogueSystem : MonoBehaviour
             UIManager.instance.RegisterPanel(UIType.DialoguePanel, dialoguePanel, true, true);
         if (choicePanel != null)
             UIManager.instance.RegisterPanel(UIType.ChoicePanel, choicePanel, false, true);
+    }
+
+    /// <summary>
+    /// <see cref="UIManager.Show(UIType)"/> 可能因未注册、互斥规则直接 return；根 Canvas 上 <see cref="CanvasGroup.alpha"/> 为 0 时子面板全透明。
+    /// </summary>
+    private void EnsureDialoguePanelShown()
+    {
+        if (dialoguePanel == null)
+            return;
+
+        if (UIManager.instance != null)
+            UIManager.instance.Show(UIType.DialoguePanel);
+        else
+            dialoguePanel.SetActive(true);
+
+        UIManager.EnsureCanvasRootVisible(dialoguePanel);
     }
 
     public void StartDialogue(string dialogueFileName)
@@ -199,17 +325,21 @@ public class DialogueSystem : MonoBehaviour
             return;
         }
 
+        ResolveDialogueUiReferencesIfNeeded();
+        if (dialoguePanel == null || dialogueUGUI == null)
+        {
+            Debug.LogError("[DialogueSystem] Missing UI: assign Dialogue Panel (Canvas or DialoguePanel) on DialogueSystem so DialogueText / ActorName can be found.");
+            return;
+        }
+
         EnsureUIManagerPanelsRegistered();
 
         currentDialogue = dialogue;
         currentNode = dialogue.nodes[0];
         isInDialogue = true;
 
-        if (UIManager.instance != null)
-            UIManager.instance.Show(UIType.DialoguePanel);
-        else if (dialoguePanel != null)
-            dialoguePanel.SetActive(true);
-            
+        EnsureDialoguePanelShown();
+
         onDialogueStart.Invoke(currentDialogue);
         ShowCurrentDialogueNode();
     }
@@ -222,7 +352,8 @@ public class DialogueSystem : MonoBehaviour
             return;
         }
         ClearChoiceButtons();
-        dialogueUGUI.text = "";
+        if (dialogueUGUI != null)
+            dialogueUGUI.text = "";
 
         StopCurrentAnimation();
         StopDialogueAudio();
@@ -247,32 +378,56 @@ public class DialogueSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// Shows or hides the left portrait for the current <paramref name="actorId"/> when they have a mapped sprite.
+    /// Shows the portrait for <paramref name="actorId"/> when a mapped sprite exists; hides all portrait slots otherwise.
     /// </summary>
     private void ApplyActorPortraitForLine(int actorId, bool visible)
     {
-        if (actorPortraitImage == null)
-            return;
-
         if (!visible)
         {
-            actorPortraitImage.gameObject.SetActive(false);
+            HideAllPortraitImages();
             return;
         }
 
-        if (!actorPortraitLookup.TryGetValue(actorId, out Sprite sprite) || sprite == null)
+        if (dialoguePanel != null && actorPortraitImage == null)
+            ResolveDialogueUiReferencesIfNeeded();
+
+        if (!actorPortraitLookup.TryGetValue(actorId, out DialogueActorPortraitEntry entry) || entry == null)
         {
-            actorPortraitImage.gameObject.SetActive(false);
+            Sprite res = Resources.Load<Sprite>($"Dialogue/Portraits/Actor{actorId}");
+            if (res != null && actorPortraitImage != null)
+            {
+                HideAllPortraitImages();
+                actorPortraitImage.sprite = res;
+                actorPortraitImage.preserveAspect = true;
+                actorPortraitImage.gameObject.SetActive(true);
+                return;
+            }
+
+            HideAllPortraitImages();
             return;
         }
 
-        actorPortraitImage.sprite = sprite;
-        actorPortraitImage.preserveAspect = true;
-        actorPortraitImage.gameObject.SetActive(true);
+        Image target = entry.portraitImage != null ? entry.portraitImage : actorPortraitImage;
+        if (target == null)
+        {
+            HideAllPortraitImages();
+            return;
+        }
+
+        HideAllPortraitImages();
+        target.sprite = entry.portraitSprite;
+        target.preserveAspect = true;
+        target.gameObject.SetActive(true);
     }
 
     private void ShowNormalNode()
     {
+        if (dialogueUGUI == null)
+        {
+            Debug.LogError("[DialogueSystem] dialogueUGUI is null — cannot display line.");
+            return;
+        }
+
         if (actorNameUGUI != null)
         {
             actorNameUGUI.text = GetUnifiedActorName(currentNode.actorId);
@@ -390,6 +545,9 @@ public class DialogueSystem : MonoBehaviour
 
     private IEnumerator TypeText(string text)
     {
+        if (dialogueUGUI == null)
+            yield break;
+
         isTyping = true;
         dialogueUGUI.text = "";
 
@@ -404,7 +562,7 @@ public class DialogueSystem : MonoBehaviour
 
     public void ContinueDialogue()
     {
-        if (!isInDialogue || currentNode == null) return;
+        if (!isInDialogue || currentNode == null || dialogueUGUI == null) return;
 
         if (isTyping)
         {

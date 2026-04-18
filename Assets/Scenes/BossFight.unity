@@ -1877,7 +1877,8 @@ MonoBehaviour:
   bossDialogue: {fileID: 425390433}
   healthBar: {fileID: 0}
   phase1MaxHp: 200
-  phase2MaxHp: 360
+  phase2MaxHp: 365
+  phase2VictorySceneName: End
   shieldInfoText: {fileID: 1568134169}
   shieldVisualRoot: {fileID: 514233032}
   phase2ShieldCombinedScoreRequired: 40

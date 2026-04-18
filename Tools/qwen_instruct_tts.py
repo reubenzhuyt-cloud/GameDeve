@@ -27,11 +27,10 @@ from qwen_vd_tts import DASHSCOPE_API_KEY, _extract_audio_url
 MODEL_FLASH = "qwen3-tts-flash"
 
 # 系统音色（与阿里云文档一致）；按角色区分声线
-# actor 1 孟婆：qwen3-tts-flash 仅支持「千问3-TTS」音色表；longlaoyi 等有声书 ID 会 400。
-# Jada=沪上阿姐，比 Maia/Cherry 更成熟；若仍不够老可改走 MiMo（ACTOR_STYLES 已加强老年描述）。
+# actor 1 孟婆：Bellona（燕铮莺），千问3-TTS 角色音色。
 ACTOR_VOICES: dict[int, str] = {
     0: "Cherry",
-    1: "Jada",
+    1: "Bellona",
     2: "Seren",
     # 3=渔夫：与 5 佃户同款男声（Arthur）
     3: "Arthur",

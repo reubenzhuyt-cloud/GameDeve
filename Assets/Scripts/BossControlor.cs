@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public sealed class BossControlor : MonoBehaviour
 {
@@ -12,6 +13,10 @@ public sealed class BossControlor : MonoBehaviour
     [Header("HP")]
     [SerializeField] private int phase1MaxHp = 100;
     [SerializeField] private int phase2MaxHp = 300;
+
+    [Header("Victory")]
+    [Tooltip("二阶段 Boss 血量归零后加载的场景名（须加入 Build Settings）。")]
+    [SerializeField] private string phase2VictorySceneName = "End";
 
     [Header("Shield (Phase 1)")]
     [Tooltip("仅一次：首次飞弹将血量打进半血及以下时锁到 50% 并开盾，同时播濒死台词；破盾后不再生成护盾。盾存在时飞弹无伤；破盾需 5 色各消至少 1 格。二阶段另有独立护盾逻辑。")]
@@ -162,7 +167,17 @@ public sealed class BossControlor : MonoBehaviour
         else
         {
             _defeated = true;
+            LoadPhase2VictoryScene();
         }
+    }
+
+    private void LoadPhase2VictoryScene()
+    {
+        string name = string.IsNullOrWhiteSpace(phase2VictorySceneName) ? "End" : phase2VictorySceneName.Trim();
+        if (SceneTransition.instance != null)
+            SceneTransition.instance.TransitionToScene(name);
+        else
+            SceneManager.LoadScene(name);
     }
 
     private void OnMatchEliminatedGemType(int gemType)

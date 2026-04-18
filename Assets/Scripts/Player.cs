@@ -74,9 +74,37 @@ public class Player : Entity
         base.Start();
         stateMachine.Initialize(idleState);
 
+        RefreshInteractionTipBinding();
+        if (GameManager.instance != null)
+            GameManager.instance.onUIPrepared.AddListener(OnGameManagerUiPrepared);
+    }
+
+    private void OnDestroy()
+    {
+        if (GameManager.instance != null)
+            GameManager.instance.onUIPrepared.RemoveListener(OnGameManagerUiPrepared);
+    }
+
+    private void OnEnable()
+    {
+        // 切场景后 UIManager 会 RemoveStalePanelReferences，需在 UIManager 就绪后重新注册 InteractionTip。
+        RefreshInteractionTipBinding();
+    }
+
+    private void OnGameManagerUiPrepared()
+    {
+        RefreshInteractionTipBinding();
+    }
+
+    /// <summary>重新注册 Press F 面板并确保 Canvas 链可见（解决切场景后未注册、或父级 CanvasGroup alpha=0 导致看不见）。</summary>
+    public void RefreshInteractionTipBinding()
+    {
         EnsureInteractionTipRegistered();
         if (interactionUGUI != null)
+        {
             UIManager.EnsureCanvasRootVisible(interactionUGUI.gameObject);
+            EnsureInteractionTipAncestorCanvasGroupsVisible(interactionUGUI.transform);
+        }
     }
     public override void Update()
     {
@@ -194,37 +222,27 @@ public class Player : Entity
 
     public void ShowInteractionUGUI(bool _show)
     {
-        EnsureInteractionTipRegistered();
-        if (dialogueObj != null)
+        if (interactionUGUI == null)
         {
-            Vector3 worldPos = dialogueObj.transform.position + new Vector3(2f, 0.3f, 0);
-            Vector3 screenPos = Camera.main.WorldToScreenPoint(worldPos);
+            if (_show)
+                Debug.LogError("[Player] interactionUGUI is null — assign Interaction Tip TextMeshPro on the Player.");
+            return;
+        }
 
-            interactionUGUI.rectTransform.position = screenPos;
-        }
-        if (interactionUGUI != null)
+        EnsureInteractionTipRegistered();
+
+        if (!_show)
         {
-            interactionUGUI.text = "Press F to interact";
-            
-            if (UIManager.instance != null)
-            {
-                if (_show)
-                {
-                    UIManager.instance.Show(UIType.InteractionTip);
-                    interactionUGUI.gameObject.SetActive(true);
-                }
-                else
-                    UIManager.instance.Hide(UIType.InteractionTip);
-            }
-            else
-            {
-                interactionUGUI.gameObject.SetActive(_show);
-            }
+            SetWorldInteractionTip(false, "", Vector3.zero);
+            return;
         }
-        else
-        {
-            Debug.LogError("InteractionUGUI is null");
-        }
+
+        Transform anchor = dialogueObj != null ? dialogueObj.transform
+            : dialogueLogic != null ? dialogueLogic.transform
+            : currentNPC != null ? currentNPC.transform
+            : transform;
+
+        SetWorldInteractionTip(true, "Press F to interact", anchor.position + new Vector3(0f, 0.5f, 0f));
     }
 
     /// <summary>与孟婆/NPC 同款：用 UIManager 管理 InteractionTip，并指定世界坐标锚点。</summary>
@@ -237,9 +255,12 @@ public class Player : Entity
 
         if (visible)
         {
+            UIManager.EnsureCanvasRootVisible(interactionUGUI.gameObject);
+            EnsureInteractionTipAncestorCanvasGroupsVisible(interactionUGUI.transform);
             interactionUGUI.text = message;
-            if (Camera.main != null)
-                interactionUGUI.rectTransform.position = Camera.main.WorldToScreenPoint(worldAnchor);
+            var cam = GetInteractionTipCamera();
+            if (cam != null)
+                interactionUGUI.rectTransform.position = cam.WorldToScreenPoint(worldAnchor);
         }
 
         if (UIManager.instance != null)
@@ -254,6 +275,30 @@ public class Player : Entity
         }
         else
             interactionUGUI.gameObject.SetActive(visible);
+    }
+
+    private static Camera GetInteractionTipCamera()
+    {
+        if (Camera.main != null)
+            return Camera.main;
+        return Object.FindFirstObjectByType<Camera>();
+    }
+
+    /// <summary><see cref="UIManager.EnsureCanvasRootVisible"/> 只抬主 Canvas 上的 CanvasGroup；中间 HUD 父节点若 alpha=0，Press F 仍不可见。</summary>
+    private static void EnsureInteractionTipAncestorCanvasGroupsVisible(Transform leaf)
+    {
+        if (leaf == null)
+            return;
+        for (Transform t = leaf; t != null; t = t.parent)
+        {
+            var cg = t.GetComponent<CanvasGroup>();
+            if (cg != null && cg.alpha < 0.01f)
+            {
+                cg.alpha = 1f;
+                cg.interactable = true;
+                cg.blocksRaycasts = true;
+            }
+        }
     }
 
     /// <summary>
@@ -307,7 +352,7 @@ public class Player : Entity
     /// </summary>
     public void TryRefreshInteractionTipAfterDialogue()
     {
-        EnsureInteractionTipRegistered();
+        RefreshInteractionTipBinding();
 
         if (_proximityInteractable != null && _proximityInteractable.IsPlayerInRange())
         {
@@ -316,12 +361,17 @@ public class Player : Entity
         }
 
         if (_activeInteractTrigger != null && _activeInteractTrigger.CompareTag("CanInteractWith"))
-            ShowInteractionUGUI(true);
+        {
+            Transform tipAnchor = dialogueObj != null ? dialogueObj.transform
+                : dialogueLogic != null ? dialogueLogic.transform
+                : currentNPC != null ? currentNPC.transform
+                : _activeInteractTrigger.transform;
+            SetWorldInteractionTip(true, "按 F 对话", tipAnchor.position + new Vector3(0f, 0.5f, 0f));
+        }
     }
 
     public void OnTriggerEnter2D(Collider2D other)
     {
-        Debug.Log("entered the trigger");
         if (other.CompareTag("CanInteractWith"))
         {
             _activeInteractTrigger = other;
@@ -329,8 +379,13 @@ public class Player : Entity
             dialogueLogic = other.GetComponent<DialogueLogicBase>() ?? other.GetComponentInParent<DialogueLogicBase>();
             currentNPC = other.GetComponent<NPC>() ?? other.GetComponentInParent<NPC>();
             currentInteractable = other.GetComponent<InteractableObject>() ?? other.GetComponentInParent<InteractableObject>();
-            ShowInteractionUGUI(true);
 
+            Transform tipAnchor = dialogueObj != null ? dialogueObj.transform
+                : dialogueLogic != null ? dialogueLogic.transform
+                : currentNPC != null ? currentNPC.transform
+                : other.transform;
+
+            SetWorldInteractionTip(true, "按 F 对话", tipAnchor.position + new Vector3(0f, 0.5f, 0f));
         }
     }
     public void JumpControl()
@@ -348,20 +403,26 @@ public class Player : Entity
             
         if (other.CompareTag("CanInteractWith") && !interactionVisible)
         {
-            ShowInteractionUGUI(true);
-            interactionUGUI.transform.position = other.GetComponent<Transform>().position
-            + new Vector3(0, 0.5f, 0);
+            dialogueObj = other.GetComponent<DialogueObj>() ?? other.GetComponentInParent<DialogueObj>();
+            dialogueLogic = other.GetComponent<DialogueLogicBase>() ?? other.GetComponentInParent<DialogueLogicBase>();
+            currentNPC = other.GetComponent<NPC>() ?? other.GetComponentInParent<NPC>();
+
+            Transform tipAnchor = dialogueObj != null ? dialogueObj.transform
+                : dialogueLogic != null ? dialogueLogic.transform
+                : currentNPC != null ? currentNPC.transform
+                : other.transform;
+
+            SetWorldInteractionTip(true, "按 F 对话", tipAnchor.position + new Vector3(0f, 0.5f, 0f));
         }
     }
     public void OnTriggerExit2D(Collider2D other)
     {
-        Debug.Log("exited the trigger");
         if (other.CompareTag("CanInteractWith"))
         {
             if (_activeInteractTrigger == other)
                 _activeInteractTrigger = null;
 
-            ShowInteractionUGUI(false);
+            SetWorldInteractionTip(false, "", Vector3.zero);
             dialogueObj = null;
             dialogueLogic = null;
             currentNPC = null;

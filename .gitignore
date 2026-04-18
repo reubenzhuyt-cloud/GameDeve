@@ -95,8 +95,10 @@ Assets/TextMesh Pro/Examples & Extras/Resources/Fonts & Materials/6969.asset.met
 .env
 *.env.local
 
+# ============ 本地工具脚本（Python 等，不入库）============
+/Tools/
+
 # ============ 临时文件 ============
-Tools/Temp/
 *.wav
 test_output.wav
 

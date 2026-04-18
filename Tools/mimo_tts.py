@@ -49,12 +49,15 @@ DIALOGUE_DIR = PROJECT_ROOT / "Assets" / "Resources" / "Dialogue"
 AUDIO_OUTPUT_DIR = PROJECT_ROOT / "Assets" / "Resources" / "Audio" / "Dialogue"
 BOSS_AUDIO_DIR = PROJECT_ROOT / "Assets" / "Resources" / "Audio" / "BossBattle"
 
-# 短词 + 空格；与 MiMo 文档示例一致
+# 短词 + 空格；与 MiMo 文档示例一致（style 仅作语气/人设提示，非本声克隆）。
 ACTOR_STYLES: dict[int, str] = {
     0: "年轻女 平和 好奇",
     1: "老年女 缓慢 慈祥 神秘",
     2: "虚弱 飘渺 叹息",
     3: "中性 平静",
+    # 5：男 NPC 佃户（参考范伟式乡土憨厚）；6：女 NPC 肉包子/许秋慈（参考张子枫式青涩阴郁少女，非本声克隆）
+    5: "中年男 憨厚 乡音 慢语速 絮叨 喜感",
+    6: "少女 清弱 怯生生 低声 阴郁 气声 单薄",
 }
 
 ACTOR_NAMES: dict[int, str] = {
@@ -62,6 +65,8 @@ ACTOR_NAMES: dict[int, str] = {
     1: "MengPo",
     2: "WeakSoul",
     3: "Narrator",
+    5: "TenantFarmer",
+    6: "RouBaZi",
 }
 
 # Boss 配音：正文只用「界面纯台词」（与 BossBattleDialogueBox 常量一致），语气走 style，
@@ -276,7 +281,7 @@ def run_dialogue_batch(
     AUDIO_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     print(f"音频输出目录: {AUDIO_OUTPUT_DIR}")
 
-    dialogue_files = sorted(DIALOGUE_DIR.glob("*.json"))
+    dialogue_files = sorted(DIALOGUE_DIR.rglob("*.json"))
     if file_pattern:
         dialogue_files = [p for p in dialogue_files if fnmatch.fnmatch(p.name, file_pattern)]
 

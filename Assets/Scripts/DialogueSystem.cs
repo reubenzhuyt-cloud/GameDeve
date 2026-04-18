@@ -690,14 +690,32 @@ public class DialogueSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Resources/Dialogue 里可用子路径（如 <c>人物对话文件夹/孟忘和渔夫</c>），语音常放在
+    /// <c>Resources/Audio/Dialogue/</c> 根目录并用「仅文件名」命名（<c>孟忘和渔夫_node0</c>）。
+    /// 先按完整路径找，再按最后一级文件名找。
+    /// </summary>
+    private static string GetDialogueResourceBaseName(string dialoguePath)
+    {
+        if (string.IsNullOrEmpty(dialoguePath))
+            return dialoguePath;
+        int i = dialoguePath.LastIndexOf('/');
+        return i >= 0 ? dialoguePath.Substring(i + 1) : dialoguePath;
+    }
+
     private void PlayDialogueAudio(int nodeId)
     {
         if (!enableDialogueAudio || string.IsNullOrEmpty(currentDialogueFileName))
             return;
 
-        string audioFileName = $"{currentDialogueFileName}_node{nodeId}";
-        AudioClip audioClip = Resources.Load<AudioClip>($"Audio/Dialogue/{audioFileName}");
-        
+        string suffix = $"_node{nodeId}";
+        string fullKey = $"{currentDialogueFileName}{suffix}";
+        string baseKey = $"{GetDialogueResourceBaseName(currentDialogueFileName)}{suffix}";
+
+        AudioClip audioClip = Resources.Load<AudioClip>($"Audio/Dialogue/{fullKey}");
+        if (audioClip == null && baseKey != fullKey)
+            audioClip = Resources.Load<AudioClip>($"Audio/Dialogue/{baseKey}");
+
         if (audioClip != null)
         {
             dialogueAudioSource.clip = audioClip;
@@ -705,7 +723,8 @@ public class DialogueSystem : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"Dialogue audio not found: {audioFileName}");
+            Debug.LogWarning(
+                $"[DialogueSystem] Dialogue audio not found. Tried Resources paths: Audio/Dialogue/{fullKey}, Audio/Dialogue/{baseKey}");
         }
     }
 

@@ -31,8 +31,8 @@ public sealed class BossBattleDialogueBox : MonoBehaviour
     [SerializeField] private float minVisibleSecondsWhenNoClip = 2f;
 
     /// <summary>
-    /// 界面纯台词（与 MiMo 合成正文一致；语气在 mimo_tts 的 style 字段，不写入台词）。
-    /// 生成：<c>python Tools/generate_tts.py boss</c>。
+    /// 界面纯台词；Boss 语音使用阿里云千问「声音设计」专属音色 + qwen3-tts-vd 合成。
+    /// 生成：<c>python Tools/generate_tts.py boss</c>（需配置 DASHSCOPE_API_KEY）。
     /// </summary>
     public const string LineBattleStart = "我不想害人。可我更不想被人害。";
 

@@ -1,11 +1,13 @@
 using UnityEngine;
 
 /// <summary>
-/// 渔夫对话：与 <see cref="MengPoDialogueLogic"/> 类似，按状态选 JSON（默认复用同一段），可选首次交谈完成任务。
-/// 场景挂载：可用 Trigger+CanInteractWith，或（推荐）同物体挂 <see cref="InteractableObject"/> + 本脚本 + <see cref="DialogueObj"/>；
-/// 未设置 <c>playerLayer</c> 时 <see cref="InteractableObject"/> 会自动使用名为 Player 的层。
-/// 靠近后显示「按 F 对话」，按 F 进入 <see cref="PlayerChatState"/>。
-/// Resources 路径：<c>Resources/Dialogue/人物对话文件夹/孟忘和渔夫.json</c> → 填 <c>人物对话文件夹/孟忘和渔夫</c>。
+/// 渔夫对话：与 <see cref="MengPoDialogueLogic"/> / 孟婆同款场景配置。
+/// <list type="bullet">
+/// <item><b>孟婆式（触发器）</b>：物体 Tag = <c>CanInteractWith</c>，<see cref="BoxCollider2D"/> 勾选 Is Trigger，<see cref="Rigidbody2D"/> Body Type = Kinematic（与孟婆一致）。</item>
+/// <item><b>或</b>：挂 <see cref="InteractableObject"/>，用距离检测显示「按 F 对话」。</item>
+/// </list>
+/// 本脚本会在运行时补一个 <see cref="DialogueObj"/>（若缺失），便于 <see cref="Player"/> 的 F 提示锚点与孟婆一致。
+/// Resources：<c>Resources/Dialogue/人物对话文件夹/孟忘和渔夫.json</c> → 填 <c>人物对话文件夹/孟忘和渔夫</c>。
 /// </summary>
 public class FishermanDialogueLogic : DialogueLogicBase
 {
@@ -28,7 +30,61 @@ public class FishermanDialogueLogic : DialogueLogicBase
     {
         if (string.IsNullOrEmpty(objectId))
             objectId = "NPC_Fisherman";
+
+        // 与孟婆一致：同物体上有 DialogueObj，Player 进入触发器时才能拿到引用并定位 F 提示
+        if (dialogueObj == null)
+            dialogueObj = GetComponent<DialogueObj>();
+        if (dialogueObj == null)
+            dialogueObj = gameObject.AddComponent<DialogueObj>();
+        dialogueObj.EnsureSingleDialogue(dialogueFile);
+
+        EnsurePhysicsForInteraction();
+
         base.Awake();
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+        WarnIfInteractionSetupIncomplete();
+    }
+
+    private void EnsurePhysicsForInteraction()
+    {
+        if (GetComponent<Collider2D>() != null)
+            return;
+
+        var box = gameObject.AddComponent<BoxCollider2D>();
+        box.isTrigger = true;
+        box.size = new Vector2(3f, 4f);
+
+        if (GetComponent<Rigidbody2D>() == null)
+        {
+            var rb = gameObject.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Kinematic;
+            rb.simulated = true;
+        }
+    }
+
+    private void WarnIfInteractionSetupIncomplete()
+    {
+        bool hasProximity = GetComponent<InteractableObject>() != null
+            || GetComponentInChildren<InteractableObject>(true) != null;
+        if (hasProximity)
+            return;
+
+        if (!CompareTag("CanInteractWith"))
+        {
+            Debug.LogWarning(
+                $"[{nameof(FishermanDialogueLogic)}] {gameObject.name}: 未检测到 InteractableObject。请把 Tag 设为 CanInteractWith（与孟婆相同），否则玩家进不了触发器，不会显示按 F。",
+                this);
+        }
+
+        var col = GetComponent<Collider2D>() ?? GetComponentInChildren<Collider2D>(true);
+        if (col == null)
+            Debug.LogWarning($"[{nameof(FishermanDialogueLogic)}] {gameObject.name}: 缺少 Collider2D，无法触发交互。", this);
+        else if (!col.isTrigger)
+            Debug.LogWarning($"[{nameof(FishermanDialogueLogic)}] {gameObject.name}: Collider2D 应勾选 Is Trigger（与孟婆相同）。", this);
     }
 
     protected override string GetDialogueForState(int state)

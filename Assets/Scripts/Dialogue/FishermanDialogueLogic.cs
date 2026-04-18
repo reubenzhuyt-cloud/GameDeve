@@ -31,14 +31,7 @@ public class FishermanDialogueLogic : DialogueLogicBase
         if (string.IsNullOrEmpty(objectId))
             objectId = "NPC_Fisherman";
 
-        // 与孟婆一致：同物体上有 DialogueObj，Player 进入触发器时才能拿到引用并定位 F 提示
-        if (dialogueObj == null)
-            dialogueObj = GetComponent<DialogueObj>();
-        if (dialogueObj == null)
-            dialogueObj = gameObject.AddComponent<DialogueObj>();
-        dialogueObj.EnsureSingleDialogue(dialogueFile);
-
-        EnsurePhysicsForInteraction();
+        EnsureLineNpcInteractSupport(dialogueFile);
 
         base.Awake();
     }
@@ -46,45 +39,7 @@ public class FishermanDialogueLogic : DialogueLogicBase
     protected override void Start()
     {
         base.Start();
-        WarnIfInteractionSetupIncomplete();
-    }
-
-    private void EnsurePhysicsForInteraction()
-    {
-        if (GetComponent<Collider2D>() != null)
-            return;
-
-        var box = gameObject.AddComponent<BoxCollider2D>();
-        box.isTrigger = true;
-        box.size = new Vector2(3f, 4f);
-
-        if (GetComponent<Rigidbody2D>() == null)
-        {
-            var rb = gameObject.AddComponent<Rigidbody2D>();
-            rb.bodyType = RigidbodyType2D.Kinematic;
-            rb.simulated = true;
-        }
-    }
-
-    private void WarnIfInteractionSetupIncomplete()
-    {
-        bool hasProximity = GetComponent<InteractableObject>() != null
-            || GetComponentInChildren<InteractableObject>(true) != null;
-        if (hasProximity)
-            return;
-
-        if (!CompareTag("CanInteractWith"))
-        {
-            Debug.LogWarning(
-                $"[{nameof(FishermanDialogueLogic)}] {gameObject.name}: 未检测到 InteractableObject。请把 Tag 设为 CanInteractWith（与孟婆相同），否则玩家进不了触发器，不会显示按 F。",
-                this);
-        }
-
-        var col = GetComponent<Collider2D>() ?? GetComponentInChildren<Collider2D>(true);
-        if (col == null)
-            Debug.LogWarning($"[{nameof(FishermanDialogueLogic)}] {gameObject.name}: 缺少 Collider2D，无法触发交互。", this);
-        else if (!col.isTrigger)
-            Debug.LogWarning($"[{nameof(FishermanDialogueLogic)}] {gameObject.name}: Collider2D 应勾选 Is Trigger（与孟婆相同）。", this);
+        WarnLineNpcInteractSetupIfIncomplete(nameof(FishermanDialogueLogic));
     }
 
     protected override string GetDialogueForState(int state)

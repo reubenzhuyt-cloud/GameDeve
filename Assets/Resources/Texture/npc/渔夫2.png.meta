@@ -1,28 +1,10 @@
 fileFormatVersion: 2
-guid: d7fa0bc8fe1af494798afad7568b23ca
+guid: 660afd25b73984741867398afcca178d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 8657100803640162678
-    second: "\u7834\u5E99\u524D\u666F_0"
-  - first:
-      213: -3153342912175828026
-    second: "\u7834\u5E99\u524D\u666F_1"
-  - first:
-      213: 4438674464193222235
-    second: "\u7834\u5E99\u524D\u666F_2"
-  - first:
-      213: 3818947794541541331
-    second: "\u7834\u5E99\u524D\u666F_3"
-  - first:
-      213: 1725979125621838900
-    second: "\u7834\u5E99\u524D\u666F_4"
-  - first:
-      213: -5448387876740198472
-    second: "\u7834\u5E99\u524D\u666F_5"
-  - first:
-      213: 5332923688214845718
-    second: "\u7834\u5E99\u524D\u666F_6"
+      213: -4584852918714355873
+    second: "\u6E14\u592B2_0"
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -118,23 +100,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: "\u7834\u5E99\u524D\u666F_4"
+      name: "\u6E14\u592B2_0"
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 1912
-        height: 1080
+        x: 566
+        y: 131
+        width: 1369
+        height: 3190
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 434dd60ced8e3f710800000000000000
-      internalID: 1725979125621838900
+      spriteID: f5f2e90ef845f50c0800000000000000
+      internalID: -4584852918714355873
       vertices: []
       indices: 
       edges: []
@@ -143,7 +125,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: a88cb80d54edee349af9d32cc2ad04c5
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -153,13 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      "\u7834\u5E99\u524D\u666F_0": 8657100803640162678
-      "\u7834\u5E99\u524D\u666F_1": -3153342912175828026
-      "\u7834\u5E99\u524D\u666F_2": 4438674464193222235
-      "\u7834\u5E99\u524D\u666F_3": 3818947794541541331
-      "\u7834\u5E99\u524D\u666F_4": 1725979125621838900
-      "\u7834\u5E99\u524D\u666F_5": -5448387876740198472
-      "\u7834\u5E99\u524D\u666F_6": 5332923688214845718
+      "\u6E14\u592B2_0": -4584852918714355873
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

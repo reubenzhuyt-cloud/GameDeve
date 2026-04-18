@@ -25,7 +25,16 @@ public class XuQiuCiDialogueLogic_FirstMeeting : DialogueLogicBase
     {
         if (string.IsNullOrEmpty(objectId))
             objectId = "XuQiuCi_FirstMeeting";
+
+        EnsureLineNpcInteractSupport(dialogueFile);
+
         base.Awake();
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+        WarnLineNpcInteractSetupIfIncomplete(nameof(XuQiuCiDialogueLogic_FirstMeeting));
     }
 
     protected override string GetDialogueForState(int state)

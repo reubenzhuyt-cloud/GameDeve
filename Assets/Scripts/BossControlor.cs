@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,6 +18,8 @@ public sealed class BossControlor : MonoBehaviour
     [Header("Victory")]
     [Tooltip("二阶段 Boss 血量归零后加载的场景名（须加入 Build Settings）。")]
     [SerializeField] private string phase2VictorySceneName = "End";
+    [SerializeField] private string victoryTransitionTip = "正在前往下一场景";
+    [SerializeField] private float victoryTipSeconds = 1f;
 
     [Header("Shield (Phase 1)")]
     [Tooltip("仅一次：首次飞弹将血量打进半血及以下时锁到 50% 并开盾，同时播濒死台词；破盾后不再生成护盾。盾存在时飞弹无伤；破盾需 5 色各消至少 1 格。二阶段另有独立护盾逻辑。")]
@@ -174,10 +177,21 @@ public sealed class BossControlor : MonoBehaviour
     private void LoadPhase2VictoryScene()
     {
         string name = string.IsNullOrWhiteSpace(phase2VictorySceneName) ? "End" : phase2VictorySceneName.Trim();
+        StartCoroutine(LoadPhase2VictoryRoutine(name));
+    }
+
+    private IEnumerator LoadPhase2VictoryRoutine(string sceneName)
+    {
+        float wait = Mathf.Max(0f, victoryTipSeconds);
+        if (wait > 0f && !string.IsNullOrEmpty(victoryTransitionTip))
+            UIManager.ShowTip(victoryTransitionTip, wait);
+        if (wait > 0f)
+            yield return new WaitForSecondsRealtime(wait);
+
         if (SceneTransition.instance != null)
-            SceneTransition.instance.TransitionToScene(name);
+            SceneTransition.instance.TransitionToScene(sceneName);
         else
-            SceneManager.LoadScene(name);
+            SceneManager.LoadScene(sceneName);
     }
 
     private void OnMatchEliminatedGemType(int gemType)

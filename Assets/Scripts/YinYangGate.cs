@@ -3,8 +3,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 玩家进入触发区后：显示「正在进入白云浦-倒计时3s」提示，
-/// 保持 3 秒后自动切换场景。
+/// 玩家进入触发区后：显示「正在进入白云浦-倒计时 Ns」GameplayTip，
+/// 默认 1 秒后切换场景。
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class YinYangGate : MonoBehaviour
@@ -14,7 +14,7 @@ public class YinYangGate : MonoBehaviour
 
     [Header("Tip")]
     [SerializeField] private string enteringTipPrefix = "正在进入白云浦-倒计时";
-    [SerializeField] private int countdownSeconds = 3;
+    [SerializeField] private int countdownSeconds = 1;
     [SerializeField] private bool cancelWhenExit = true;
 
     private Coroutine enteringRoutine;
@@ -54,7 +54,7 @@ public class YinYangGate : MonoBehaviour
         int sec = Mathf.Max(1, countdownSeconds);
         for (int i = sec; i >= 1; i--)
         {
-            UIManager.ShowTip($"{enteringTipPrefix}{i}s", 1.05f);
+            UIManager.ShowTip($"{enteringTipPrefix}{i}s", 1f);
             yield return new WaitForSecondsRealtime(1f);
         }
 

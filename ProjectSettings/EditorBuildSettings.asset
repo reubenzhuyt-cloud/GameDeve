@@ -18,11 +18,14 @@ EditorBuildSettings:
     path: Assets/Scenes/OldTemple.unity
     guid: 8e05c1d03a85f0d4f8d4fc2645e3a155
   - enabled: 1
+    path: Assets/Scenes/Door.unity
+    guid: aa8b15210a0666944af30bc8d9d3bb9b
+  - enabled: 1
     path: Assets/Scenes/Zhu.unity
     guid: a0a797f4ea59c984cbbe265306f87682
   - enabled: 1
-    path: Assets/Scenes/BaiYunPu_Night.unity
-    guid: aa8b15210a0666944af30bc8d9d3bb9b
+    path: Assets/Scenes/OldTemple 1.unity
+    guid: 98e75ea046da4e64b97f889a64136402
   - enabled: 1
     path: Assets/Scenes/BossFight.unity
     guid: a32a9794a9d5f45439135f25888b6cb6

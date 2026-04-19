@@ -97,6 +97,8 @@ public class DialogueSystem : MonoBehaviour
     private ConditionManager conditionManager;
     private AudioSource dialogueAudioSource;
     private Dictionary<int, DialogueActorPortraitEntry> actorPortraitLookup = new();
+    /// <summary>Editor 布局下的立绘 anchoredPosition，用于 actorId≠0 时仅将 posX 取反。</summary>
+    private readonly Dictionary<RectTransform, Vector2> _portraitAnchoredBase = new();
 
     public UnityEvent<DialogueData> onDialogueEnd = new();
     public UnityEvent<DialogueData> onDialogueStart = new();
@@ -157,6 +159,7 @@ public class DialogueSystem : MonoBehaviour
         ApplyUnifiedActorMapping();
 
         RebuildActorPortraitLookup();
+        RegisterPortraitAnchoredBasesIfMissing();
         HideAllPortraitImages();
     }
 
@@ -207,6 +210,44 @@ public class DialogueSystem : MonoBehaviour
         }
     }
 
+    /// <summary>记录各立绘 Image 在场景里的初始 anchoredPosition（仅登记一次，供 posX 取反）。</summary>
+    private void RegisterPortraitAnchoredBasesIfMissing()
+    {
+        void Add(Image img)
+        {
+            if (img == null)
+                return;
+            var rt = img.rectTransform;
+            if (!_portraitAnchoredBase.ContainsKey(rt))
+                _portraitAnchoredBase[rt] = rt.anchoredPosition;
+        }
+
+        Add(actorPortraitImage);
+        if (actorPortraitEntries != null)
+        {
+            foreach (var e in actorPortraitEntries)
+            {
+                if (e?.portraitImage != null)
+                    Add(e.portraitImage);
+            }
+        }
+    }
+
+    /// <summary>角色 0 使用布局中的 posX；其它角色使用相反数。</summary>
+    private void ApplyPortraitAnchoredXForActor(RectTransform rt, int actorId)
+    {
+        if (rt == null)
+            return;
+        if (!_portraitAnchoredBase.TryGetValue(rt, out Vector2 basis))
+        {
+            basis = rt.anchoredPosition;
+            _portraitAnchoredBase[rt] = basis;
+        }
+
+        float x = actorId == 0 ? basis.x : -basis.x;
+        rt.anchoredPosition = new Vector2(x, basis.y);
+    }
+
     /// <summary>
     /// When only the Canvas root is assigned (or fields are left empty on a shared prefab), bind to
     /// DialoguePanel / ActorName / DialogueText / ChoicePanel under the shared Canvas prefab hierarchy.
@@ -239,6 +280,8 @@ public class DialogueSystem : MonoBehaviour
             if (portraitGo != null)
                 actorPortraitImage = portraitGo.GetComponent<Image>();
         }
+
+        RegisterPortraitAnchoredBasesIfMissing();
     }
 
     private static TextMeshProUGUI FindTmpByHierarchyName(Transform root, string objectName)
@@ -400,6 +443,7 @@ public class DialogueSystem : MonoBehaviour
                 actorPortraitImage.sprite = res;
                 actorPortraitImage.preserveAspect = true;
                 actorPortraitImage.gameObject.SetActive(true);
+                ApplyPortraitAnchoredXForActor(actorPortraitImage.rectTransform, actorId);
                 return;
             }
 
@@ -418,6 +462,7 @@ public class DialogueSystem : MonoBehaviour
         target.sprite = entry.portraitSprite;
         target.preserveAspect = true;
         target.gameObject.SetActive(true);
+        ApplyPortraitAnchoredXForActor(target.rectTransform, actorId);
     }
 
     private void ShowNormalNode()

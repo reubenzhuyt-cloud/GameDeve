@@ -1026,7 +1026,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -851320148736375, guid: 59baa25f31c58594589958034d5214b6, type: 3}
+  m_Sprite: {fileID: 8532618385176960643, guid: 0ef6f6e78d88a654b85699386794103c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1110,7 +1110,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 22.442402, y: 29.759998}
+    oldSize: {x: 23.04, y: 31.32}
     newSize: {x: 22.442402, y: 29.759998}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -1879,6 +1879,8 @@ MonoBehaviour:
   phase1MaxHp: 200
   phase2MaxHp: 365
   phase2VictorySceneName: End
+  victoryTransitionTip: "\u6B63\u5728\u524D\u5F80\u4E0B\u4E00\u573A\u666F"
+  victoryTipSeconds: 1
   shieldInfoText: {fileID: 1568134169}
   shieldVisualRoot: {fileID: 514233032}
   phase2ShieldCombinedScoreRequired: 40

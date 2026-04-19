@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 
 /// <summary>
-/// 玩家进入触发区后：可选在拖入的 Panel 上通过子物体 TipText 显示「正在前往下个场景」与倒计时（3.0→0.0），
+/// 玩家进入触发区后：可选在拖入的 Panel 上通过子物体 TipText 显示「正在前往下个场景」与倒计时，
 /// Panel 从右侧偏移一整格宽度滑入，结束后滑回再切场景；未拖 Panel 时沿用 GameplayTip。
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
@@ -23,13 +23,13 @@ public class OldTemple : MonoBehaviour
     [SerializeField] private float slideDuration = 0.35f;
 
     [Header("Timing")]
-    [SerializeField] private float delaySeconds = 3f;
+    [SerializeField] private float delaySeconds = 1f;
     [SerializeField] private bool cancelWhenExit = true;
 
     [Header("Fallback：未拖 Panel 时用 GameplayTip")]
     [SerializeField] private string teleportTipText = "正在传送";
     [Tooltip("ShowTip 持续时间，应 ≥ delaySeconds")]
-    [SerializeField] private float tipDurationSeconds = 3.5f;
+    [SerializeField] private float tipDurationSeconds = 1.1f;
 
     private Coroutine _routine;
     private bool _loading;

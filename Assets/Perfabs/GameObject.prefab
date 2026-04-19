@@ -350,7 +350,7 @@ MonoBehaviour:
   actorPortraitImage: {fileID: 0}
   actorPortraitEntries:
   - actorId: 0
-    portraitSprite: {fileID: 688023597214627338, guid: c9532454e5b20bd43914cd23a94dc989, type: 3}
+    portraitSprite: {fileID: 688023597214627338, guid: c780ea609cf73574d87f60c945eaf880, type: 3}
     portraitImage: {fileID: 0}
   - actorId: 1
     portraitSprite: {fileID: 3576073338009663701, guid: 64a1153d29a596b40a1e873a5c2af312, type: 3}
@@ -359,16 +359,16 @@ MonoBehaviour:
     portraitSprite: {fileID: -6293861684711348968, guid: ecdeec282b28f1c4a891851f22256aff, type: 3}
     portraitImage: {fileID: 0}
   - actorId: 3
-    portraitSprite: {fileID: 1683116014843847875, guid: 072dec227c03311439a247dbb9012ec3, type: 3}
+    portraitSprite: {fileID: 1683116014843847875, guid: 1b1d1052edf59514a927f56e3e8aed4b, type: 3}
     portraitImage: {fileID: 0}
   - actorId: 4
-    portraitSprite: {fileID: -851320148736375, guid: 59baa25f31c58594589958034d5214b6, type: 3}
+    portraitSprite: {fileID: 528744105309684902, guid: 7d233edd9e742c54cba52258c71fbef6, type: 3}
     portraitImage: {fileID: 0}
   - actorId: 5
     portraitSprite: {fileID: 7694712343530924960, guid: c12f6758a30f58740a4d3d0dc4acd985, type: 3}
     portraitImage: {fileID: 0}
   - actorId: 6
-    portraitSprite: {fileID: -851320148736375, guid: 59baa25f31c58594589958034d5214b6, type: 3}
+    portraitSprite: {fileID: 528744105309684902, guid: 7d233edd9e742c54cba52258c71fbef6, type: 3}
     portraitImage: {fileID: 0}
   typingSpeed: 0.05
   actors:

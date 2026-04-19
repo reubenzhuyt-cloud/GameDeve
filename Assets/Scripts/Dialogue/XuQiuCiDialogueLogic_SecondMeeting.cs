@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -23,6 +24,8 @@ public class XuQiuCiDialogueLogic_SecondMeeting : DialogueLogicBase
     [Header("场景切换")]
     [Tooltip("《第二次》对白首次播完（存档从 Initial→TalkedOnce）后进入的场景")]
     [SerializeField] private string nextSceneAfterSecondMeeting = "BossFight";
+    [SerializeField] private string sceneTransitionTip = "正在前往下一场景";
+    [SerializeField] private float sceneTransitionTipSeconds = 1f;
 
     [Header("Debug")]
     [Tooltip("勾选后在 Console 输出 2D 触发与 InteractableObject 距离检测边沿，用于排查 Press F / 碰撞")]
@@ -129,12 +132,21 @@ public class XuQiuCiDialogueLogic_SecondMeeting : DialogueLogicBase
         base.OnDialogueEnd();
 
         if (firstCompletion && !string.IsNullOrEmpty(nextSceneAfterSecondMeeting))
-        {
-            if (SceneTransition.instance != null)
-                SceneTransition.instance.TransitionToScene(nextSceneAfterSecondMeeting);
-            else
-                SceneManager.LoadScene(nextSceneAfterSecondMeeting);
-        }
+            StartCoroutine(EnterSceneAfterTip(nextSceneAfterSecondMeeting));
+    }
+
+    private IEnumerator EnterSceneAfterTip(string sceneName)
+    {
+        float wait = Mathf.Max(0f, sceneTransitionTipSeconds);
+        if (wait > 0f && !string.IsNullOrEmpty(sceneTransitionTip))
+            UIManager.ShowTip(sceneTransitionTip, wait);
+        if (wait > 0f)
+            yield return new WaitForSecondsRealtime(wait);
+
+        if (SceneTransition.instance != null)
+            SceneTransition.instance.TransitionToScene(sceneName);
+        else
+            SceneManager.LoadScene(sceneName);
     }
 
     private void TryCompleteFirstTalkQuest()

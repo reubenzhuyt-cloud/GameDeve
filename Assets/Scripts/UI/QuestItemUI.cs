@@ -44,13 +44,13 @@ public class QuestItemUI : MonoBehaviour
         if (questNameText != null)
         {
             questNameText.overflowMode = TextOverflowModes.Ellipsis;
-            questNameText.enableWordWrapping = false;
+            questNameText.textWrappingMode = TextWrappingModes.NoWrap;
         }
-        
+
         if (questTypeText != null)
         {
             questTypeText.overflowMode = TextOverflowModes.Ellipsis;
-            questTypeText.enableWordWrapping = false;
+            questTypeText.textWrappingMode = TextWrappingModes.NoWrap;
         }
     }
     

@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// 各状态对应 Resources/Dialogue 下独立 JSON；若缺失则在 <see cref="GetDialogueFileName"/> 中回退到初次对白文件名。
+/// </summary>
 public class WeakSoulDialogueLogic : DialogueLogicBase
 {
     public enum WeakSoulState
@@ -26,10 +29,26 @@ public class WeakSoulDialogueLogic : DialogueLogicBase
         base.Awake();
         if (weakSoul == null)
         {
-            weakSoul = GetComponent<WeakSoul>();
+            weakSoul = GetComponent<WeakSoul>()
+                ?? GetComponentInChildren<WeakSoul>(true)
+                ?? GetComponentInParent<WeakSoul>();
         }
     }
-    
+
+    public override string GetDialogueFileName()
+    {
+        string candidate = GetDialogueForState(currentState);
+        if (Resources.Load<TextAsset>($"Dialogue/{candidate}") != null)
+            return candidate;
+        if (candidate != initialDialogue)
+        {
+            Debug.LogWarning($"[WeakSoulDialogueLogic] 未找到 Resources/Dialogue/{candidate}.json，回退为 {initialDialogue}。", this);
+            return initialDialogue;
+        }
+
+        return candidate;
+    }
+
     protected override string GetDialogueForState(int state)
     {
         switch ((WeakSoulState)state)

@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [ExecuteAlways]
 public class SimpleShapeRenderer : MonoBehaviour
@@ -19,6 +22,7 @@ public class SimpleShapeRenderer : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private Texture2D texture;
     private Sprite sprite;
+    private bool generationQueued;
     
     private void Awake()
     {
@@ -40,9 +44,36 @@ public class SimpleShapeRenderer : MonoBehaviour
     {
         if (autoGenerate && Application.isEditor)
         {
-            GenerateShape();
+            QueueGenerateShapeInEditor();
         }
     }
+
+    private void QueueGenerateShapeInEditor()
+    {
+#if UNITY_EDITOR
+        if (generationQueued)
+        {
+            return;
+        }
+
+        generationQueued = true;
+        EditorApplication.delayCall += GenerateShapeFromDelayCall;
+#endif
+    }
+
+#if UNITY_EDITOR
+    private void GenerateShapeFromDelayCall()
+    {
+        generationQueued = false;
+
+        if (this == null || !autoGenerate)
+        {
+            return;
+        }
+
+        GenerateShape();
+    }
+#endif
     
     public void GenerateShape()
     {

@@ -1,1321 +1,1197 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>对话蓝图编辑器</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Microsoft YaHei', sans-serif; background: #1a1a2e; color: #eee; height: 100vh; overflow: hidden; user-select: none; }
-        
-        .header { background: #16213e; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #0f3460; height: 50px; }
-        .header h1 { font-size: 1.2rem; color: #e94560; display: flex; align-items: center; gap: 8px; }
-        .header-actions { display: flex; gap: 8px; }
-        .btn { padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
-        .btn:hover { transform: translateY(-1px); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-primary { background: #e94560; color: white; }
-        .btn-secondary { background: #0f3460; color: white; }
-        .btn-success { background: #2ecc71; color: white; }
-        .btn-warning { background: #f39c12; color: white; }
-        .btn-danger { background: #c0392b; color: white; }
-        .btn-icon { padding: 7px 10px; min-width: 36px; }
-        
-        .main-container { display: flex; height: calc(100vh - 50px); }
-        
-        .left-panel { width: 280px; background: #16213e; border-right: 2px solid #0f3460; display: flex; flex-direction: column; }
-        .panel-section { padding: 12px; border-bottom: 1px solid #0f3460; }
-        .panel-section-title { font-size: 0.8rem; color: #888; margin-bottom: 8px; }
-        .search-box { position: relative; }
-        .search-box input { width: 100%; padding: 8px 12px 8px 32px; background: #1a1a2e; border: 1px solid #0f3460; border-radius: 6px; color: #eee; font-size: 0.85rem; }
-        .search-box input:focus { outline: none; border-color: #e94560; }
-        .search-box::before { content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; }
-        .node-list { flex: 1; overflow-y: auto; padding: 8px; }
-        .node-item { padding: 10px; background: #1a1a2e; border-radius: 6px; margin-bottom: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
-        .node-item:hover { border-color: #0f3460; background: #1f2940; }
-        .node-item.selected { border-color: #e94560; background: #2a1f3d; }
-        .node-item.hidden { display: none; }
-        .node-item-title { font-weight: bold; font-size: 0.85rem; }
-        .node-item-text { font-size: 0.75rem; color: #666; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        
-        .canvas-container { flex: 1; position: relative; overflow: hidden; background: #0d1b2a; background-image: radial-gradient(circle, #1a2a3a 1px, transparent 1px); background-size: 20px 20px; }
-        .canvas { position: absolute; width: 100%; height: 100%; transform-origin: 0 0; }
-        .node { position: absolute; width: 180px; background: #16213e; border: 2px solid #0f3460; border-radius: 10px; cursor: move; transition: box-shadow 0.2s; }
-        .node:hover { border-color: #1a4a8a; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        .node.selected { border-color: #e94560; box-shadow: 0 0 20px rgba(233,69,96,0.3); }
-        .node-header { padding: 8px 12px; background: linear-gradient(135deg, #0f3460, #1a4a8a); border-radius: 8px 8px 0 0; display: flex; align-items: center; gap: 8px; }
-        .node-icon { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
-        .node-icon.player { background: linear-gradient(135deg, #3498db, #2980b9); }
-        .node-icon.npc { background: linear-gradient(135deg, #e94560, #c0392b); }
-        .node-icon.choice { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
-        .node-icon.start { background: linear-gradient(135deg, #f39c12, #e67e22); }
-        .node-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.85rem; font-weight: bold; }
-        .node-body { padding: 10px 12px; font-size: 0.8rem; color: #aaa; min-height: 40px; max-height: 60px; overflow: hidden; }
-        .node-ports { display: flex; justify-content: space-between; padding: 6px 0; }
-        .port { display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 2px 6px; }
-        .port:hover .port-dot { transform: scale(1.4); }
-        .port-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid; flex-shrink: 0; transition: all 0.2s; }
-        .port-dot.input { border-color: #3498db; background: #0f3460; }
-        .port-dot.output { border-color: #2ecc71; background: #0f3460; }
-        .port-dot.choice { border-color: #9b59b6; background: #0f3460; }
-        .port-label { font-size: 0.7rem; color: #666; white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
-        .port-group { display: flex; flex-direction: column; gap: 4px; }
-        .port-group.output-ports { align-items: flex-end; }
-        .port-group.input-ports { align-items: flex-start; }
-        
-        .connection-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
-        .connection-svg path { fill: none; stroke-width: 2.5; stroke-linecap: round; }
-        .connection-svg path.normal { stroke: #2ecc71; }
-        .connection-svg path.choice { stroke: #9b59b6; }
-        .connection-svg path.preview { stroke: #e94560; stroke-dasharray: 8 4; animation: dash 0.5s linear infinite; }
-        .connection-svg path:hover { stroke-width: 4; filter: drop-shadow(0 0 4px currentColor); }
-        .connection-svg path.highlight { stroke-width: 4; filter: drop-shadow(0 0 6px currentColor); }
-        @keyframes dash { to { stroke-dashoffset: -12; } }
-        @keyframes flow { 0% { stroke-dashoffset: 24; } 100% { stroke-dashoffset: 0; } }
-        .connection-svg path.animated { stroke-dasharray: 8 4; animation: flow 1s linear infinite; }
-        
-        .right-panel { width: 320px; background: #16213e; border-left: 2px solid #0f3460; display: flex; flex-direction: column; }
-        .right-panel .panel-header { padding: 12px; background: #0f3460; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-        .right-panel .panel-content { flex: 1; overflow-y: auto; padding: 12px; }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 6px; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; background: #1a1a2e; border: 1px solid #0f3460; border-radius: 6px; color: #eee; font-size: 0.85rem; transition: border-color 0.2s; }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #e94560; }
-        .form-group textarea { min-height: 80px; resize: vertical; }
-        .empty-state { text-align: center; padding: 40px; color: #666; }
-        
-        .context-menu { position: fixed; background: #16213e; border: 2px solid #0f3460; border-radius: 10px; padding: 6px 0; z-index: 500; display: none; min-width: 160px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-        .context-menu.show { display: block; }
-        .context-menu button { width: 100%; padding: 10px 16px; border: none; background: transparent; color: #eee; cursor: pointer; text-align: left; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; }
-        .context-menu button:hover { background: #0f3460; }
-        .context-menu-divider { height: 1px; background: #0f3460; margin: 4px 0; }
-        
-        .zoom-indicator { position: absolute; top: 10px; right: 10px; background: rgba(22,33,62,0.9); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; backdrop-filter: blur(4px); }
-        .canvas-controls { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 6px; }
-        .canvas-btn { width: 36px; height: 36px; border-radius: 8px; border: none; background: rgba(22,33,62,0.9); color: #eee; cursor: pointer; font-size: 1.1rem; backdrop-filter: blur(4px); transition: all 0.2s; }
-        .canvas-btn:hover { background: #0f3460; transform: scale(1.1); }
-        .canvas-btn.active { background: #e94560; }
-        
-        .minimap { position: absolute; bottom: 60px; right: 10px; width: 180px; height: 120px; background: rgba(22,33,62,0.9); border: 2px solid #0f3460; border-radius: 8px; overflow: hidden; backdrop-filter: blur(4px); }
-        .minimap-canvas { width: 100%; height: 100%; }
-        .minimap-viewport { position: absolute; border: 2px solid #e94560; background: rgba(233,69,96,0.1); pointer-events: none; }
-        
-        .align-line { position: absolute; background: #e94560; pointer-events: none; z-index: 100; }
-        .align-line.horizontal { height: 1px; width: 100%; left: 0; }
-        .align-line.vertical { width: 1px; height: 100%; top: 0; }
-        
-        .status-bar { position: absolute; bottom: 10px; left: 10px; background: rgba(22,33,62,0.9); padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; color: #888; backdrop-filter: blur(4px); display: flex; gap: 16px; }
-        .status-item { display: flex; align-items: center; gap: 4px; }
-        
-        .help-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #16213e; border: 2px solid #0f3460; border-radius: 12px; padding: 20px; z-index: 600; min-width: 400px; display: none; box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
-        .help-panel.show { display: block; }
-        .help-panel h3 { margin-bottom: 16px; color: #e94560; }
-        .help-panel table { width: 100%; border-collapse: collapse; }
-        .help-panel td { padding: 8px 12px; border-bottom: 1px solid #0f3460; }
-        .help-panel td:first-child { color: #2ecc71; font-family: monospace; font-weight: bold; }
-        .help-panel .close-btn { position: absolute; top: 12px; right: 12px; background: none; border: none; color: #888; cursor: pointer; font-size: 1.2rem; }
-        
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #2ecc71; color: white; padding: 12px 24px; border-radius: 8px; z-index: 700; opacity: 0; transition: opacity 0.3s; }
-        .toast.show { opacity: 1; }
-        .toast.error { background: #e94560; }
-        
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 550; display: none; }
-        .overlay.show { display: block; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>对话蓝图编辑器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; background: #121520; color: #e8e8ec; height: 100vh; overflow: hidden; user-select: none; }
+    .bar { height: 48px; background: #1a1f2e; border-bottom: 1px solid #2a3145; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; flex-shrink: 0; }
+    .bar h1 { font-size: 15px; font-weight: 600; color: #f07178; }
+    .bar .actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    button { border: none; border-radius: 6px; padding: 7px 12px; font-size: 12px; cursor: pointer; background: #2a3145; color: #e8e8ec; }
+    button:hover { filter: brightness(1.08); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-p { background: #c678dd; color: #fff; }
+    .btn-g { background: #3d9970; color: #fff; }
+    .btn-o { background: #e5a23a; color: #1a1a1a; }
+    .btn-r { background: #c94c4c; color: #fff; }
+    .main { display: flex; height: calc(100vh - 48px); }
+    .side { width: 270px; background: #1a1f2e; border-right: 1px solid #2a3145; display: flex; flex-direction: column; min-width: 220px; }
+    .side h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7289; padding: 10px 12px 6px; }
+    .field { padding: 8px 12px; }
+    .field label { display: block; font-size: 11px; color: #8b92a8; margin-bottom: 4px; }
+    .field input[type="text"], .field input[type="number"], .field textarea, .field select {
+      width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #2a3145; background: #121520; color: #e8e8ec; font-size: 13px;
+    }
+    .field textarea { min-height: 72px; resize: vertical; }
+    .list { flex: 1; overflow-y: auto; padding: 4px 8px 12px; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 12px; }
+    .nitem {
+      padding: 8px 10px; border-radius: 8px; background: #121520; border: 1px solid #2a3145; margin-bottom: 6px; cursor: grab;
+      font-size: 12px; display: flex; align-items: flex-start; gap: 8px;
+    }
+    .nitem:active { cursor: grabbing; }
+    .nitem.on { border-color: #c678dd; background: #1e1a28; }
+    .nitem .idx { font-family: ui-monospace, monospace; color: #5c9cf5; min-width: 2.2em; }
+    .nitem .snippet { color: #8b92a8; font-size: 11px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #0d0f14; }
+    .grid { position: absolute; inset: 0; background-image: radial-gradient(circle, #2a3145 1px, transparent 1px); background-size: 18px 18px; }
+    .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    .edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 0; }
+    .edges path { fill: none; stroke-width: 2; stroke-linecap: round; }
+    .edges path.n { stroke: #3d9970; }
+    .edges path.c { stroke: #c678dd; }
+    .edges path.pre { stroke: #e5a23a; stroke-dasharray: 6 4; }
+    .node {
+      position: absolute; width: 200px; z-index: 1; background: #1a1f2e; border: 1px solid #2a3145; border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.35);
+    }
+    .node.sel { border-color: #c678dd; box-shadow: 0 0 0 2px rgba(198,120,221,.25); }
+    .node .hd { padding: 8px 10px; border-radius: 10px 10px 0 0; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .node .hd.line { background: linear-gradient(90deg, #2d4a6f, #1a1f2e); }
+    .node .hd.choice { background: linear-gradient(90deg, #5c3d6e, #1a1f2e); }
+    .node .bd { padding: 8px 10px; font-size: 11px; color: #8b92a8; max-height: 52px; overflow: hidden; line-height: 1.35; }
+    .ports { display: flex; justify-content: space-between; align-items: flex-start; padding: 6px 8px 10px; gap: 6px; }
+    .port { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #6b7289; cursor: crosshair; pointer-events: auto; }
+    .port i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid; flex-shrink: 0; }
+    .port.in i { border-color: #5c9cf5; background: #121520; }
+    .port.out i { border-color: #3d9970; background: #121520; }
+    .port.ch i { border-color: #c678dd; background: #121520; }
+    .ins { width: 300px; background: #1a1f2e; border-left: 1px solid #2a3145; overflow-y: auto; padding: 12px; font-size: 13px; }
+    .ins h2 { font-size: 12px; color: #8b92a8; margin-bottom: 10px; }
+    .hint { font-size: 11px; color: #6b7289; line-height: 1.5; margin-bottom: 12px; padding: 8px; background: #121520; border-radius: 8px; border: 1px solid #2a3145; }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 10px 18px; background: #3d9970; color: #fff; border-radius: 8px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 99; }
+    .toast.show { opacity: 1; }
+    .toast.err { background: #c94c4c; }
+    .zoom { position: absolute; top: 10px; right: 10px; font-size: 11px; color: #6b7289; background: rgba(26,31,46,.9); padding: 4px 8px; border-radius: 6px; }
+    .stat { position: absolute; bottom: 10px; left: 10px; font-size: 11px; color: #6b7289; }
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 200; display: none; align-items: center; justify-content: center; }
+    .modal-bg.on { display: flex; }
+    .modal { background: #1a1f2e; border: 1px solid #2a3145; border-radius: 12px; padding: 16px 18px; max-width: 420px; width: calc(100% - 32px); box-shadow: 0 16px 48px rgba(0,0,0,.5); }
+    .modal h3 { font-size: 14px; color: #f07178; margin-bottom: 8px; }
+    .modal p.sub { font-size: 11px; color: #8b92a8; margin-bottom: 12px; line-height: 1.45; }
+    .modal .opt { display: block; width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 8px; border-radius: 8px; background: #121520; border: 1px solid #2a3145; color: #e8e8ec; cursor: pointer; font-size: 12px; }
+    .modal .opt:hover { border-color: #5c9cf5; }
+    .modal .opt.primary { border-color: #c678dd; background: #1e1a24; }
+    .modal .opt .tag { color: #5c9cf5; font-family: ui-monospace, monospace; margin-right: 6px; }
+    .modal .cancel { margin-top: 4px; background: transparent; color: #8b92a8; width: 100%; }
+  </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🎭 对话蓝图编辑器</h1>
-        <div class="header-actions">
-            <button class="btn btn-icon btn-secondary" id="undoBtn" onclick="undo()" title="撤销 (Ctrl+Z)" disabled>↶</button>
-            <button class="btn btn-icon btn-secondary" id="redoBtn" onclick="redo()" title="重做 (Ctrl+Y)" disabled>↷</button>
-            <button class="btn btn-icon btn-secondary" onclick="copyNode()" title="复制 (Ctrl+C)">📋</button>
-            <button class="btn btn-icon btn-secondary" onclick="pasteNode()" title="粘贴 (Ctrl+V)">📄</button>
-            <button class="btn btn-icon btn-danger" onclick="deleteSelectedNode()" title="删除 (Delete)">🗑</button>
-            <button class="btn btn-secondary" onclick="openFile()" title="打开文件 (Ctrl+O)">📂 打开</button>
-            <button class="btn btn-primary" onclick="saveFile()" title="保存 (Ctrl+S)">💾 保存</button>
-            <button class="btn btn-icon btn-warning" onclick="clearAll()" title="清空全部">🗑</button>
-            <button class="btn btn-icon btn-secondary" onclick="toggleHelp()" title="快捷键帮助">?</button>
-        </div>
+  <div class="bar">
+    <h1>对话蓝图 · Unity JsonUtility</h1>
+    <div class="actions">
+      <button type="button" id="btnNew">新建</button>
+      <button type="button" id="btnOpen">打开 JSON</button>
+      <button type="button" class="btn-p" id="btnSave">保存 JSON</button>
+      <button type="button" class="btn-g" id="btnCopy">复制 JSON</button>
+      <button type="button" id="btnUndo" disabled>撤销</button>
+      <span style="width:8px"></span>
+      <button type="button" class="btn-o" id="btnAddLine">+ 台词节点</button>
+      <button type="button" class="btn-o" id="btnAddChoice">+ 分支节点</button>
+      <button type="button" id="btnLayout">自动布局</button>
+      <span style="width:8px"></span>
+      <button type="button" id="btnVal">校验</button>
     </div>
-
-    <div class="main-container">
-        <div class="left-panel">
-            <div class="panel-section">
-                <button class="btn btn-primary" style="width:100%;" onclick="showAddMenu(event)">➕ 添加节点</button>
-            </div>
-            <div class="panel-section">
-                <div class="panel-section-title" style="margin-bottom:8px;">🎭 角色管理</div>
-                <div class="form-group" style="margin-bottom:8px;">
-                    <label style="font-size:0.75rem;">角色ID</label>
-                    <input type="number" id="actorIdInput" value="0" min="0" style="font-size:0.75rem;" onchange="updateActorId()">
-                </div>
-                <div class="form-group" style="margin-bottom:8px;">
-                    <label style="font-size:0.75rem;">角色类型</label>
-                    <select id="actorTypeSelect" style="font-size:0.75rem;" onchange="document.getElementById('actorIdInput').value=this.value;updateActorId()">
-                    </select>
-                </div>
-                <button class="btn btn-success" style="width:100%;font-size:0.8rem;" onclick="addNewActor()">➕ 添加角色</button>
-            </div>
-            <div class="panel-section">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="搜索节点..." oninput="filterNodes(this.value)">
-                </div>
-            </div>
-            <div class="panel-section-title" style="padding: 0 12px;">节点列表 (<span id="nodeCount">0</span>)</div>
-            <div class="node-list" id="nodeList"></div>
-        </div>
-
-        <div class="canvas-container" id="canvasContainer">
-            <div class="canvas" id="canvas">
-                <svg class="connection-svg" id="connectionSvg"></svg>
-            </div>
-            <div class="zoom-indicator" id="zoomIndicator">100%</div>
-            <div class="status-bar">
-                <div class="status-item">节点: <span id="statusNodeCount">0</span></div>
-                <div class="status-item">连线: <span id="statusConnectionCount">0</span></div>
-                <div class="status-item" id="saveStatus">未保存</div>
-            </div>
-            <div class="canvas-controls">
-                <button class="canvas-btn" onclick="autoLayout()" title="自动排列">⬛</button>
-                <button class="canvas-btn" id="gridSnapBtn" onclick="toggleGridSnap()" title="网格对齐">▦</button>
-                <button class="canvas-btn" onclick="zoomIn()" title="放大">+</button>
-                <button class="canvas-btn" onclick="zoomOut()" title="缩小">−</button>
-                <button class="canvas-btn" onclick="resetView()" title="重置视图">⌂</button>
-            </div>
-            <div class="minimap" id="minimap">
-                <canvas class="minimap-canvas" id="minimapCanvas"></canvas>
-                <div class="minimap-viewport" id="minimapViewport"></div>
-            </div>
-            <div class="context-menu" id="contextMenu"></div>
-        </div>
-
-        <div class="right-panel">
-            <div class="panel-header">
-                <span>✏️ 属性</span>
-            </div>
-            <div class="panel-content" id="propertyPanel">
-                <div class="empty-state">选择节点以编辑属性</div>
-            </div>
-        </div>
+  </div>
+  <div class="main">
+    <div class="side">
+      <h2>工程</h2>
+      <div class="field">
+        <label>DialogueName</label>
+        <input type="text" id="dlgName" placeholder="对话名称" />
+      </div>
+      <h2>节点顺序 = 数组下标</h2>
+      <p class="field" style="font-size:11px;color:#8b92a8;line-height:1.45;padding-top:0;">
+        Unity 从 <code style="color:#5c9cf5">nodes[0]</code> 开始。<br/>
+        跳转字段 <code>nextNodeIndex</code> / <code>targetNodeIndex</code> 均为<strong>本列表中的下标</strong>。
+      </p>
+      <div class="row">
+        <button type="button" id="btnDel" class="btn-r" disabled>删除选中</button>
+      </div>
+      <h2>节点列表（可拖动排序）</h2>
+      <div class="list" id="nodeList"></div>
     </div>
-
-    <div class="overlay" id="overlay" onclick="closeAllPanels()"></div>
-    
-    <div class="help-panel" id="helpPanel">
-        <button class="close-btn" onclick="toggleHelp()">×</button>
-        <h3>⌨️ 快捷键</h3>
-        <table>
-            <tr><td>Ctrl + Z</td><td>撤销</td></tr>
-            <tr><td>Ctrl + Y</td><td>重做</td></tr>
-            <tr><td>Ctrl + C</td><td>复制节点</td></tr>
-            <tr><td>Ctrl + V</td><td>粘贴节点</td></tr>
-            <tr><td>Delete</td><td>删除节点</td></tr>
-            <tr><td>Escape</td><td>取消操作</td></tr>
-            <tr><td>Ctrl + S</td><td>保存文件</td></tr>
-            <tr><td>Ctrl + O</td><td>打开文件</td></tr>
-            <tr><td>Ctrl + Shift + S</td><td>另存为</td></tr>
-        </table>
+    <div class="canvas-wrap" id="wrap">
+      <div class="grid"></div>
+      <div class="zoom" id="zoomLab">100%</div>
+      <div class="stat" id="statLab"></div>
+      <div class="canvas" id="canvas">
+        <svg class="edges" id="edges"></svg>
+      </div>
     </div>
+    <div class="ins" id="inspector">
+      <h2>属性</h2>
+      <div class="hint">角色表与白云浦场景一致（玩家 / 渔夫 / 肉包子 / 佃户）。选好角色即视为「已填角色」，可作前序跳转。连线：从右侧圆点拖到左侧「入」；未命中时若在附近会自动吸附，否则弹出选择面板。</div>
+      <div id="insBody"></div>
+    </div>
+  </div>
+  <input type="file" id="fileIn" accept=".json,application/json" hidden />
+  <div class="toast" id="toast"></div>
+  <div class="modal-bg" id="modalBg" aria-hidden="true">
+    <div class="modal" id="modalBox" role="dialog" aria-modal="true">
+      <h3 id="modalTitle">选择连线目标</h3>
+      <p class="sub" id="modalSub">未命中连接点。若附近无节点，请从下方选择；误操作可点取消。</p>
+      <div id="modalOpts"></div>
+      <button type="button" class="cancel" id="modalCancel">取消</button>
+    </div>
+  </div>
 
-    <div class="toast" id="toast"></div>
+  <script>
+(function () {
+  'use strict';
 
-    <script>
-        let dialogueData = { DialogueName: "NewDialogue", nodes: [] };
-        let selectedIndex = -1;
-        let nodeIdCounter = 0;
-        let zoom = 1, panX = 0, panY = 0;
-        let dragging = null;
-        let connecting = null;
-        let mouseX = 0, mouseY = 0;
-        let gridSnap = false;
-        let clipboard = null;
-        let pendingConnection = null;
-        let currentFileHandle = null;
-        let autoSaveTimer = null;
-        
-        // 角色管理数组
-        let actors = [
-            { id: 0, name: "玩家 (固定)", isFixed: true },
-            { id: 1, name: "NPC (固定)", isFixed: true }
-        ];
-        
-        const canvas = document.getElementById('canvas');
-        const container = document.getElementById('canvasContainer');
-        const svg = document.getElementById('connectionSvg');
-        
-        class HistoryManager {
-            constructor(maxSize = 50) {
-                this.history = [];
-                this.currentIndex = -1;
-                this.maxSize = maxSize;
-            }
-            
-            push(state) {
-                this.history = this.history.slice(0, this.currentIndex + 1);
-                this.history.push(JSON.stringify(state));
-                if (this.history.length > this.maxSize) {
-                    this.history.shift();
-                } else {
-                    this.currentIndex++;
-                }
-                this.updateButtons();
-            }
-            
-            undo() {
-                if (this.currentIndex > 0) {
-                    this.currentIndex--;
-                    this.updateButtons();
-                    return JSON.parse(this.history[this.currentIndex]);
-                }
-                return null;
-            }
-            
-            redo() {
-                if (this.currentIndex < this.history.length - 1) {
-                    this.currentIndex++;
-                    this.updateButtons();
-                    return JSON.parse(this.history[this.currentIndex]);
-                }
-                return null;
-            }
-            
-            canUndo() { return this.currentIndex > 0; }
-            canRedo() { return this.currentIndex < this.history.length - 1; }
-            
-            updateButtons() {
-                document.getElementById('undoBtn').disabled = !this.canUndo();
-                document.getElementById('redoBtn').disabled = !this.canRedo();
-            }
-            
-            clear() {
-                this.history = [];
-                this.currentIndex = -1;
-                this.updateButtons();
-            }
-        }
-        
-        const historyManager = new HistoryManager();
-        
-        // 初始化角色类型下拉框
-        function initActorTypeSelect() {
-            const actorTypeSelect = document.getElementById('actorTypeSelect');
-            actorTypeSelect.innerHTML = actors.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-        }
-        
-        function scheduleAutoSave() {
-            clearTimeout(autoSaveTimer);
-            document.getElementById('saveStatus').textContent = '待保存...';
-            saveToLocalStorage();
-            autoSaveTimer = setTimeout(() => {
-                autoSave();
-            }, 2000);
-        }
-        
-        function saveToLocalStorage() {
-            try {
-                localStorage.setItem('dialogueEditor_cache', JSON.stringify(dialogueData));
-            } catch (e) {
-                console.error('缓存保存失败:', e);
-            }
-        }
-        
-        function loadFromLocalStorage() {
-            try {
-                const data = localStorage.getItem('dialogueEditor_cache');
-                if (data) {
-                    return JSON.parse(data);
-                }
-            } catch (e) {
-                console.error('缓存加载失败:', e);
-            }
-            return null;
-        }
-        
-        async function autoSave() {
-            if (!currentFileHandle) {
-                document.getElementById('saveStatus').textContent = '未选择文件';
-                return;
-            }
-            try {
-                const writable = await currentFileHandle.createWritable();
-                const data = JSON.parse(JSON.stringify(dialogueData));
-                data.nodes.forEach(n => { 
-                    if (n.animationTrigger === undefined) n.animationTrigger = "";
-                    if (n.choices) {
-                        n.choices.forEach(c => {
-                            if (c.conditions === undefined) c.conditions = [];
-                        });
-                    }
-                });
-                await writable.write(JSON.stringify(data, null, 2));
-                await writable.close();
-                document.getElementById('saveStatus').textContent = '已保存';
-            } catch (e) {
-                console.error('自动保存失败:', e);
-                document.getElementById('saveStatus').textContent = '保存失败';
-            }
-        }
-        
-        function saveHistory() {
-            historyManager.push(dialogueData);
-            scheduleAutoSave();
-        }
-        
-        function undo() {
-            const state = historyManager.undo();
-            if (state) {
-                dialogueData = state;
-                selectedIndex = -1;
-                render();
-                renderProperty();
-            }
-        }
-        
-        function redo() {
-            const state = historyManager.redo();
-            if (state) {
-                dialogueData = state;
-                selectedIndex = -1;
-                render();
-                renderProperty();
-            }
-        }
-        
-        async function openFile() {
-            try {
-                const [fileHandle] = await window.showOpenFilePicker({
-                    types: [{
-                        description: 'JSON Files',
-                        accept: { 'application/json': ['.json'] }
-                    }]
-                });
-                const file = await fileHandle.getFile();
-                const content = await file.text();
-                dialogueData = JSON.parse(content);
-                updateMaxId();
-                
-                let needLayout = dialogueData.nodes.some(n => !n.position);
-                if (needLayout) {
-                    autoLayout(false);
-                }
-                
-                currentFileHandle = fileHandle;
-                document.getElementById('saveStatus').textContent = file.name;
-                historyManager.push(dialogueData);
-                render();
-                showToast('打开成功: ' + file.name);
-            } catch (e) {
-                if (e.name !== 'AbortError') {
-                    console.error('打开文件失败:', e);
-                    showToast('打开文件失败', true);
-                }
-            }
-        }
-        
-        function autoLayout(saveHist = true) {
-            if (dialogueData.nodes.length === 0) return;
-            
-            const nodeWidth = 200;
-            const nodeHeight = 100;
-            const hGap = 80;
-            const vGap = 60;
-            
-            const nodeMap = new Map();
-            dialogueData.nodes.forEach(n => nodeMap.set(n.nodeId, n));
-            
-            const visited = new Set();
-            const levels = [];
-            
-            const startNode = dialogueData.nodes.find(n => n.actorId === 2);
-            if (!startNode) {
-                dialogueData.nodes.forEach((n, i) => {
-                    n.position = { x: 100 + i * (nodeWidth + hGap), y: 100 };
-                });
-                if (saveHist) { saveHistory(); render(); showToast('已自动排列节点'); }
-                return;
-            }
-            
-            function getChildren(node) {
-                const children = [];
-                if (node.isChoiceNode && node.choices) {
-                    node.choices.forEach(c => {
-                        if (c.targetNodeIndex !== -1) {
-                            const child = nodeMap.get(c.targetNodeIndex);
-                            if (child) children.push({ node: child, type: 'choice' });
-                        }
-                    });
-                } else if (node.nextNodeIndex !== -1) {
-                    const child = nodeMap.get(node.nextNodeIndex);
-                    if (child) children.push({ node: child, type: 'normal' });
-                }
-                return children;
-            }
-            
-            function layoutNode(node, level, yOffset) {
-                if (visited.has(node.nodeId)) return yOffset;
-                visited.add(node.nodeId);
-                
-                if (!levels[level]) levels[level] = [];
-                levels[level].push(node);
-                
-                const children = getChildren(node);
-                let currentYOffset = yOffset;
-                
-                children.forEach((child, idx) => {
-                    if (idx > 0) currentYOffset += nodeHeight + vGap;
-                    currentYOffset = layoutNode(child.node, level + 1, currentYOffset);
-                });
-                
-                return Math.max(currentYOffset, yOffset + nodeHeight);
-            }
-            
-            layoutNode(startNode, 0, 0);
-            
-            dialogueData.nodes.forEach(n => {
-                if (!visited.has(n.nodeId)) {
-                    if (!levels[0]) levels[0] = [];
-                    levels[0].push(n);
-                }
-            });
-            
-            levels.forEach((levelNodes, level) => {
-                const x = 100 + level * (nodeWidth + hGap);
-                let startY = 100;
-                
-                levelNodes.forEach((node, idx) => {
-                    node.position = {
-                        x: x,
-                        y: startY + idx * (nodeHeight + vGap)
-                    };
-                });
-            });
-            
-            if (saveHist) { saveHistory(); render(); showToast('已自动排列节点'); }
-        }
-        
-        async function saveFile() {
-            try {
-                if (!currentFileHandle) {
-                    await saveFileAs();
-                    return;
-                }
-                const writable = await currentFileHandle.createWritable();
-                const data = JSON.parse(JSON.stringify(dialogueData));
-                data.nodes.forEach(n => { 
-                    if (n.animationTrigger === undefined) n.animationTrigger = "";
-                    if (n.choices) {
-                        n.choices.forEach(c => {
-                            if (c.conditions === undefined) c.conditions = [];
-                        });
-                    }
-                });
-                await writable.write(JSON.stringify(data, null, 2));
-                await writable.close();
-                document.getElementById('saveStatus').textContent = '已保存';
-                showToast('保存成功');
-            } catch (e) {
-                console.error('保存失败:', e);
-                showToast('保存失败', true);
-            }
-        }
-        
-        async function saveFileAs() {
-            try {
-                const fileHandle = await window.showSaveFilePicker({
-                    types: [{
-                        description: 'JSON Files',
-                        accept: { 'application/json': ['.json'] }
-                    }],
-                    suggestedName: (dialogueData.DialogueName || 'dialogue') + '.json'
-                });
-                currentFileHandle = fileHandle;
-                const writable = await fileHandle.createWritable();
-                const data = JSON.parse(JSON.stringify(dialogueData));
-                data.nodes.forEach(n => { 
-                    if (n.animationTrigger === undefined) n.animationTrigger = "";
-                    if (n.choices) {
-                        n.choices.forEach(c => {
-                            if (c.conditions === undefined) c.conditions = [];
-                        });
-                    }
-                });
-                await writable.write(JSON.stringify(data, null, 2));
-                await writable.close();
-                const file = await fileHandle.getFile();
-                document.getElementById('saveStatus').textContent = file.name;
-                showToast('保存成功: ' + file.name);
-            } catch (e) {
-                if (e.name !== 'AbortError') {
-                    console.error('保存失败:', e);
-                    showToast('保存失败', true);
-                }
-            }
-        }
-        
-        function updateMaxId() {
-            nodeIdCounter = 0;
-            dialogueData.nodes.forEach(n => { if (n.nodeId >= nodeIdCounter) nodeIdCounter = n.nodeId + 1; });
-        }
-        
-        function addNode(type, x, y, autoConnect = null, actorId = 0) {
-            saveHistory();
-            const node = {
-                nodeId: nodeIdCounter++,
-                actorId: type === 'start' ? 2 : actorId,
-                dialogueText: "",
-                nextNodeIndex: -1,
-                isChoiceNode: type === 'choice',
-                position: { x: x || 100, y: y || 100 },
-                choices: type === 'choice' ? [{ choiceText: "Option1", targetNodeIndex: -1, conditions: [] }] : null,
-                animationTrigger: ""
-            };
-            dialogueData.nodes.push(node);
-            
-            if (autoConnect) {
-                const fromNode = dialogueData.nodes[autoConnect.from];
-                if (autoConnect.port === 'choice') {
-                    fromNode.choices[autoConnect.ci].targetNodeIndex = node.nodeId;
-                } else {
-                    fromNode.nextNodeIndex = node.nodeId;
-                }
-            }
-            
-            render();
-            selectNode(dialogueData.nodes.length - 1);
-            return node.nodeId;
-        }
-        
-        function selectNode(index) {
-            selectedIndex = index;
-            document.querySelectorAll('.node').forEach((el, i) => el.classList.toggle('selected', i === index));
-            document.querySelectorAll('.node-item').forEach((el, i) => el.classList.toggle('selected', i === index));
-            renderProperty();
-            
-            if (index >= 0) {
-                const node = dialogueData.nodes[index];
-                document.getElementById('actorIdInput').value = node.actorId;
-                document.getElementById('actorTypeSelect').value = node.actorId;
-            }
-        }
-        
-        function deleteSelectedNode() {
-            if (selectedIndex < 0) return;
-            saveHistory();
-            const deletedId = dialogueData.nodes[selectedIndex].nodeId;
-            dialogueData.nodes.splice(selectedIndex, 1);
-            dialogueData.nodes.forEach(n => {
-                if (n.nextNodeIndex === deletedId) n.nextNodeIndex = -1;
-                if (n.choices) {
-                    n.choices.forEach(c => {
-                        if (c.targetNodeIndex === deletedId) c.targetNodeIndex = -1;
-                    });
-                }
-            });
-            selectedIndex = -1;
-            render();
-            renderProperty();
-            showToast('节点已删除');
-        }
-        
-        function clearAll() {
-            if (dialogueData.nodes.length === 0) return;
-            if (!confirm('确定要清空所有节点吗？此操作不可撤销。')) return;
-            dialogueData = { DialogueName: "NewDialogue", nodes: [] };
-            nodeIdCounter = 0;
-            selectedIndex = -1;
-            historyManager.clear();
-            
-            const startNode = {
-                nodeId: nodeIdCounter++,
-                actorId: 2,
-                dialogueText: "",
-                nextNodeIndex: -1,
-                isChoiceNode: false,
-                position: { x: 100, y: 100 },
-                choices: null,
-                animationTrigger: ""
-            };
-            dialogueData.nodes.push(startNode);
-            
-            render();
-            selectNode(0);
-            showToast('已清空并保留开始节点');
-        }
-        
-        function copyNode() {
-            if (selectedIndex < 0) return;
-            clipboard = JSON.parse(JSON.stringify(dialogueData.nodes[selectedIndex]));
-            showToast('节点已复制');
-        }
-        
-        function pasteNode() {
-            if (!clipboard) return;
-            saveHistory();
-            const newNode = JSON.parse(JSON.stringify(clipboard));
-            newNode.nodeId = nodeIdCounter++;
-            newNode.position.x += 30;
-            newNode.position.y += 30;
-            newNode.nextNodeIndex = -1;
-            if (newNode.choices) {
-                newNode.choices.forEach(c => c.targetNodeIndex = -1);
-            }
-            dialogueData.nodes.push(newNode);
-            render();
-            selectNode(dialogueData.nodes.length - 1);
-            showToast('节点已粘贴');
-        }
-        
-        function render() {
-            canvas.innerHTML = '';
-            svg.innerHTML = '';
-            
-            const fragment = document.createDocumentFragment();
-            
-            dialogueData.nodes.forEach((node, i) => {
-                const el = document.createElement('div');
-                el.className = 'node' + (i === selectedIndex ? ' selected' : '');
-                el.style.left = node.position.x + 'px';
-                el.style.top = node.position.y + 'px';
-                el.dataset.index = i;
-                
-                let title = node.actorId === 2 ? '开始' : (node.isChoiceNode ? '选择' : (actors.find(a => a.id === node.actorId) ? actors.find(a => a.id === node.actorId).name : '未知'));
-                let currentActor = actors.find(a => a.id === node.actorId);
-                let isPlayer = node.actorId === 0;
-                let isNpc = node.actorId === 1 || (currentActor && !currentActor.isFixed && node.actorId > 1);
-                let iconClass = node.isChoiceNode ? 'choice' : (node.actorId === 2 ? 'start' : (isPlayer ? 'player' : 'npc'));
-                let iconChar = node.isChoiceNode ? '?' : (node.actorId === 2 ? '▶' : (isPlayer ? '玩' : (isNpc ? 'N' : '?')));
-                
-                let ports = '';
-                let inputPorts = node.actorId === 2 ? '' : `<div class="port" data-i="${i}" data-port="input"><div class="port-dot input"></div><span class="port-label">${node.isChoiceNode ? '入口' : '输入'}</span></div>`;
-                let outputPorts = '';
-                if (node.isChoiceNode && node.choices) {
-                    node.choices.forEach((c, ci) => {
-                        outputPorts += `<div class="port" data-i="${i}" data-port="choice" data-ci="${ci}"><span class="port-label">${c.choiceText || '选项'+(ci+1)}</span><div class="port-dot choice"></div></div>`;
-                    });
-                } else {
-                    outputPorts += `<div class="port" data-i="${i}" data-port="output"><span class="port-label">输出</span><div class="port-dot output"></div></div>`;
-                }
-                
-                ports = `<div class="port-group input-ports">${inputPorts}</div><div class="port-group output-ports">${outputPorts}</div>`;
-                
-                el.innerHTML = `
-                    <div class="node-header">
-                        <div class="node-icon ${iconClass}">${iconChar}</div>
-                        <div class="node-title">${title} #${node.nodeId}</div>
-                    </div>
-                    <div class="node-body">${node.dialogueText || '(Empty)'}</div>
-                    <div class="node-ports">${ports}</div>
-                `;
-                fragment.appendChild(el);
-            });
-            
-            canvas.appendChild(fragment);
-            canvas.appendChild(svg);
-            renderConnections();
-            renderNodeList();
-            updateTransform();
-            updateMinimap();
-            updateStatusBar();
-        }
-        
-        function renderConnections() {
-            let paths = '';
-            let connectionCount = 0;
-            
-            dialogueData.nodes.forEach((node, i) => {
-                if (node.isChoiceNode && node.choices) {
-                    node.choices.forEach((c, ci) => {
-                        if (c.targetNodeIndex !== -1) {
-                            const toIdx = dialogueData.nodes.findIndex(n => n.nodeId === c.targetNodeIndex);
-                            if (toIdx >= 0) {
-                                paths += createPath(i, toIdx, 'choice', ci);
-                                connectionCount++;
-                            }
-                        }
-                    });
-                } else if (node.nextNodeIndex !== -1) {
-                    const toIdx = dialogueData.nodes.findIndex(n => n.nodeId === node.nextNodeIndex);
-                    if (toIdx >= 0) {
-                        paths += createPath(i, toIdx, 'output', 0);
-                        connectionCount++;
-                    }
-                }
-            });
-            
-            if (connecting) {
-                const start = getPortPos(connecting.from, connecting.port, connecting.ci);
-                const end = { x: (mouseX - container.getBoundingClientRect().left) / zoom - panX, y: (mouseY - container.getBoundingClientRect().top) / zoom - panY };
-                paths += `<path d="${bezier(start, end)}" class="preview"/>`;
-            }
-            
-            if (pendingConnection) {
-                const start = getPortPos(pendingConnection.from, pendingConnection.port, pendingConnection.ci);
-                const end = { x: pendingConnection.endX, y: pendingConnection.endY };
-                paths += `<path d="${bezier(start, end)}" class="preview"/>`;
-            }
-            
-            svg.innerHTML = paths;
-            document.getElementById('statusConnectionCount').textContent = connectionCount;
-        }
-        
-        function getPortPos(nodeIdx, portType, choiceIdx) {
-            const nodeEl = canvas.children[nodeIdx];
-            if (!nodeEl) return { x: 0, y: 0 };
-            let port;
-            if (portType === 'input') port = nodeEl.querySelector('.port[data-port="input"]');
-            else if (portType === 'choice') port = nodeEl.querySelectorAll('.port[data-port="choice"]')[choiceIdx];
-            else port = nodeEl.querySelector('.port[data-port="output"]');
-            if (!port) return { x: 0, y: 0 };
-            const rect = port.getBoundingClientRect();
-            const cont = container.getBoundingClientRect();
-            return { x: (rect.left + rect.width/2 - cont.left) / zoom - panX, y: (rect.top + rect.height/2 - cont.top) / zoom - panY };
-        }
-        
-        function bezier(a, b) {
-            const cp = Math.max(50, Math.abs(b.x - a.x) * 0.5);
-            return `M ${a.x} ${a.y} C ${a.x+cp} ${a.y}, ${b.x-cp} ${b.y}, ${b.x} ${b.y}`;
-        }
-        
-        function createPath(from, to, portType, ci) {
-            const pathClass = portType === 'choice' ? 'choice' : 'normal';
-            return `<path d="${bezier(getPortPos(from, portType, ci), getPortPos(to, 'input', 0))}" class="${pathClass}"/>`;
-        }
-        
-        function renderNodeList() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            let html = '';
-            dialogueData.nodes.forEach((n, i) => {
-                const title = n.actorId === 2 ? '开始' : (n.isChoiceNode ? '选择' : (actors.find(a => a.id === n.actorId) ? actors.find(a => a.id === n.actorId).name : '未知'));
-                const text = n.dialogueText || '(Empty)';
-                const matches = !searchTerm || title.toLowerCase().includes(searchTerm) || text.toLowerCase().includes(searchTerm) || `#${n.nodeId}`.includes(searchTerm);
-                html += `<div class="node-item ${i === selectedIndex ? 'selected' : ''} ${matches ? '' : 'hidden'}" onclick="selectNode(${i})">
-                    <div class="node-item-title">${title} #${n.nodeId}</div>
-                    <div class="node-item-text">${text}</div>
-                </div>`;
-            });
-            document.getElementById('nodeList').innerHTML = html;
-            document.getElementById('nodeCount').textContent = dialogueData.nodes.length;
-        }
-        
-        function filterNodes(term) {
-            renderNodeList();
-        }
-        
-        function renderProperty() {
-            const panel = document.getElementById('propertyPanel');
-            if (selectedIndex < 0) { 
-                panel.innerHTML = '<div class="empty-state">选择节点以编辑属性</div>'; 
-                return; 
-            }
-            const currentIndex = selectedIndex;
-            const node = dialogueData.nodes[currentIndex];
-            let choicesHtml = '';
-            if (node.isChoiceNode && node.choices) {
-                choicesHtml = node.choices.map((c, i) => `
-                    <div class="form-group" style="background:#1a1a2e;padding:12px;border-radius:8px;margin-bottom:10px;border-left:3px solid #9b59b6;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                            <span style="font-weight:bold;color:#9b59b6;">🎯 选项${i+1}</span>
-                            <button class="btn btn-danger" style="padding:4px 10px;font-size:0.75rem;" onclick="removeChoice(${i})">删除</button>
-                        </div>
-                        <label>选项文本</label>
-                        <input type="text" value="${c.choiceText}" oninput="updateChoiceText(${i}, this.value)">
-                        <label style="margin-top:8px">目标节点</label>
-                        <select onchange="updateChoiceTarget(${i}, this.value)">
-                            <option value="-1" ${c.targetNodeIndex===-1?'selected':''}>结束</option>
-                            ${dialogueData.nodes.filter(n=>n.nodeId!==node.nodeId).map(n=>`<option value="${n.nodeId}" ${c.targetNodeIndex===n.nodeId?'selected':''}>${n.actorId===2?'开始':(n.isChoiceNode?'选择':(n.actorId===0?'玩家':'NPC'))}#${n.nodeId}</option>`).join('')}
-                        </select>
-                    </div>
-                `).join('');
-                choicesHtml = `
-                    <div style="background:#16213e;padding:12px;border-radius:8px;margin-top:12px">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                            <b style="color:#9b59b6;">🎯 选择分支</b>
-                            <button class="btn btn-success" style="padding:6px 12px;font-size:0.8rem;" onclick="addChoice()">+ 添加选项</button>
-                        </div>
-                        ${choicesHtml}
-                    </div>`;
-            }
-            panel.innerHTML = `
-                <div class="form-group"><label>对话名称</label><input type="text" value="${dialogueData.DialogueName}" oninput="dialogueData.DialogueName=this.value;scheduleAutoSave()"></div>
-                <div class="form-group"><label>节点ID</label><input type="text" value="#${node.nodeId}" readonly style="background:#0f3460;"></div>
-                ${node.actorId!==2?`<div class="form-group"><label>角色</label><select onchange="dialogueData.nodes[${currentIndex}].actorId=parseInt(this.value);saveHistory();render();renderProperty();document.getElementById('actorIdInput').value=this.value;document.getElementById('actorTypeSelect').value=this.value;scheduleAutoSave();">
-                    ${actors.map(a => `<option value="${a.id}" ${node.actorId===a.id?'selected':''}>${a.name}</option>`).join('')}
-                </select></div>`:''}
-                <div class="form-group"><label>对话文本</label><textarea oninput="dialogueData.nodes[${currentIndex}].dialogueText=this.value;scheduleAutoSave();updateNodeDisplay(${currentIndex})">${node.dialogueText}</textarea></div>
-                ${node.actorId!==2?`<div class="form-group"><label>动画触发器</label><input type="text" value="${node.animationTrigger||''}" oninput="dialogueData.nodes[${currentIndex}].animationTrigger=this.value;scheduleAutoSave()"></div>`:''}
-                ${node.actorId!==2&&!node.isChoiceNode?`<div class="form-group"><label>下一节点</label><select onchange="dialogueData.nodes[${currentIndex}].nextNodeIndex=parseInt(this.value);saveHistory();render()">
-                    <option value="-1" ${node.nextNodeIndex===-1?'selected':''}>结束</option>
-                    ${dialogueData.nodes.filter(n=>n.nodeId!==node.nodeId).map(n=>`<option value="${n.nodeId}" ${node.nextNodeIndex===n.nodeId?'selected':''}>${n.actorId===2?'开始':(n.isChoiceNode?'选择':(n.actorId===0?'玩家':'NPC'))}#${n.nodeId}</option>`).join('')}
-                </select></div>`:''}
-                ${node.actorId!==2?`<div class="form-group"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" ${node.isChoiceNode?'checked':''} onchange="toggleChoiceNode(this.checked)"> 选择节点（分支）</label></div>`:''}
-                ${choicesHtml}
-                <div style="margin-top:16px;padding-top:12px;border-top:1px solid #0f3460;">
-                    <button class="btn btn-danger" style="width:100%;" onclick="deleteSelectedNode()">🗑 删除此节点</button>
-                </div>
-            `;
-        }
-        
-        function toggleChoiceNode(checked) {
-            const node = dialogueData.nodes[selectedIndex];
-            node.isChoiceNode = checked;
-            if (checked) {
-                node.choices = [{ choiceText: "Option1", targetNodeIndex: -1, conditions: [] }];
-                node.nextNodeIndex = -1;
-            } else {
-                node.choices = null;
-            }
-            saveHistory();
-            render();
-            renderProperty();
-        }
-        
-        function addChoice() {
-            const node = dialogueData.nodes[selectedIndex];
-            if (!node.choices) node.choices = [];
-            node.choices.push({ choiceText: "Option" + (node.choices.length + 1), targetNodeIndex: -1, conditions: [] });
-            saveHistory();
-            render();
-            renderProperty();
-        }
-        
-        function removeChoice(idx) {
-            const node = dialogueData.nodes[selectedIndex];
-            if (node.choices && node.choices.length > 1) {
-                node.choices.splice(idx, 1);
-                saveHistory();
-                render();
-                renderProperty();
-            }
-        }
-        
-        function updateActorId() {
-            const actorId = parseInt(document.getElementById('actorIdInput').value) || 0;
-            
-            if (selectedIndex >= 0) {
-                saveHistory();
-                const node = dialogueData.nodes[selectedIndex];
-                node.actorId = actorId;
-                
-                render();
-                renderProperty();
-                scheduleAutoSave();
-                showToast('角色ID已更新');
-            }
-        }
-        
-        function addNewActor() {
-            let maxActorId = 1;
-            actors.forEach(a => {
-                if (a.id > maxActorId) maxActorId = a.id;
-            });
-            const newActorId = maxActorId + 1;
-            
-            actors.push({ id: newActorId, name: "角色 " + newActorId, isFixed: false });
-            
-            // 更新角色类型下拉框
-            const actorTypeSelect = document.getElementById('actorTypeSelect');
-            actorTypeSelect.innerHTML = actors.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-            
-            document.getElementById('actorIdInput').value = newActorId;
-            document.getElementById('actorTypeSelect').value = newActorId;
-            
-            // 更新所有相关的下拉框
-            if (selectedIndex >= 0) {
-                renderProperty();
-            }
-            
-            // 重新渲染所有节点，确保新角色名称能正确显示
-            render();
-            showToast('已添加新角色ID: ' + newActorId);
-        }
-        
-        function updateChoiceText(i, v) { 
-            const node = dialogueData.nodes[selectedIndex];
-            node.choices[i].choiceText = v;
-            scheduleAutoSave();
-            
-            const nodeEl = canvas.children[selectedIndex];
-            if (nodeEl) {
-                const portLabel = nodeEl.querySelectorAll('.port[data-port="choice"]')[i];
-                if (portLabel) {
-                    const label = portLabel.querySelector('.port-label');
-                    if (label) label.textContent = v || 'Option' + (i + 1);
-                }
-            }
-            
-            renderConnections();
-            renderNodeList();
-        }
-        
-        function updateChoiceTarget(i, v) { 
-            const node = dialogueData.nodes[selectedIndex];
-            node.choices[i].targetNodeIndex = parseInt(v);
-            saveHistory();
-            render();
-            renderProperty();
-        }
-        
-        function showAddMenu(e) {
-            e && e.stopPropagation();
-            const menu = document.getElementById('contextMenu');
-            menu.innerHTML = `
-                <button onclick="addNode('start', null, null, null, 2)">🟡 开始节点</button>
-                <button onclick="addNode('dialogue', null, null, null, 0)">🔵 玩家节点</button>
-                <button onclick="addNode('dialogue', null, null, null, 1)">🔴 NPC节点</button>
-                <button onclick="addNode('choice', null, null, null, 0)">🟣 选择节点</button>
-            `;
-            const rect = container.getBoundingClientRect();
-            menu.style.left = Math.min(e ? e.clientX : rect.left + rect.width/2, window.innerWidth - 180) + 'px';
-            menu.style.top = Math.min(e ? e.clientY : rect.top + rect.height/2, window.innerHeight - 150) + 'px';
-            menu.classList.add('show');
-        }
-        
-        function addNodeAtCenter(type, actorId = 0) {
-            const rect = container.getBoundingClientRect();
-            addNode(type, (rect.width/2 - panX)/zoom - 90, (rect.height/2 - panY)/zoom - 40, null, actorId);
-            hideMenu();
-        }
-        
-        function hideMenu() {
-            document.getElementById('contextMenu').classList.remove('show');
-            connecting = null;
-            pendingConnection = null;
-        }
-        
-        function closeAllPanels() {
-            hideMenu();
-            document.getElementById('helpPanel').classList.remove('show');
-            document.getElementById('overlay').classList.remove('show');
-        }
-        
-        function toggleHelp() {
-            const panel = document.getElementById('helpPanel');
-            const overlay = document.getElementById('overlay');
-            if (panel.classList.contains('show')) {
-                panel.classList.remove('show');
-                overlay.classList.remove('show');
-            } else {
-                panel.classList.add('show');
-                overlay.classList.add('show');
-            }
-        }
-        
-        function toggleGridSnap() {
-            gridSnap = !gridSnap;
-            document.getElementById('gridSnapBtn').classList.toggle('active', gridSnap);
-            showToast(gridSnap ? '网格对齐已启用' : '网格对齐已禁用');
-        }
-        
-        function snapToGrid(value, gridSize = 20) {
-            return gridSnap ? Math.round(value / gridSize) * gridSize : value;
-        }
-        
-        function updateTransform() {
-            canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
-            document.getElementById('zoomIndicator').textContent = Math.round(zoom*100) + '%';
-            renderConnections();
-            updateMinimap();
-        }
-        
-        function zoomIn() { zoom = Math.min(zoom + 0.1, 3); updateTransform(); }
-        function zoomOut() { zoom = Math.max(zoom - 0.1, 0.3); updateTransform(); }
-        function resetView() { zoom = 1; panX = 0; panY = 0; updateTransform(); }
-        
-        function updateMinimap() {
-            const minimapCanvas = document.getElementById('minimapCanvas');
-            const ctx = minimapCanvas.getContext('2d');
-            const rect = minimapCanvas.getBoundingClientRect();
-            minimapCanvas.width = rect.width;
-            minimapCanvas.height = rect.height;
-            
-            ctx.fillStyle = '#0d1b2a';
-            ctx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
-            
-            if (dialogueData.nodes.length === 0) return;
-            
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            dialogueData.nodes.forEach(n => {
-                minX = Math.min(minX, n.position.x);
-                maxX = Math.max(maxX, n.position.x + 180);
-                minY = Math.min(minY, n.position.y);
-                maxY = Math.max(maxY, n.position.y + 100);
-            });
-            
-            const padding = 50;
-            minX -= padding; maxX += padding; minY -= padding; maxY += padding;
-            
-            const scaleX = minimapCanvas.width / (maxX - minX);
-            const scaleY = minimapCanvas.height / (maxY - minY);
-            const scale = Math.min(scaleX, scaleY);
-            
-            ctx.fillStyle = '#16213e';
-            dialogueData.nodes.forEach(n => {
-                const x = (n.position.x - minX) * scale;
-                const y = (n.position.y - minY) * scale;
-                const w = 180 * scale;
-                const h = 80 * scale;
-                ctx.fillRect(x, y, w, h);
-            });
-            
-            const viewport = document.getElementById('minimapViewport');
-            const containerRect = container.getBoundingClientRect();
-            const vpX = (-panX - minX) * scale;
-            const vpY = (-panY - minY) * scale;
-            const vpW = containerRect.width / zoom * scale;
-            const vpH = containerRect.height / zoom * scale;
-            viewport.style.left = Math.max(0, vpX) + 'px';
-            viewport.style.top = Math.max(0, vpY) + 'px';
-            viewport.style.width = Math.min(vpW, minimapCanvas.width) + 'px';
-            viewport.style.height = Math.min(vpH, minimapCanvas.height) + 'px';
-        }
-        
-        function updateStatusBar() {
-            document.getElementById('statusNodeCount').textContent = dialogueData.nodes.length;
-        }
-        
-        function updateNodeDisplay(idx) {
-            const node = dialogueData.nodes[idx];
-            const nodeEl = canvas.children[idx];
-            if (!node || !nodeEl) return;
-            
-            const bodyEl = nodeEl.querySelector('.node-body');
-            if (bodyEl) {
-                bodyEl.textContent = node.dialogueText || '(Empty)';
-            }
-            
-            renderNodeList();
-        }
-        
-        function showToast(message, isError = false) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = 'toast show' + (isError ? ' error' : '');
-            setTimeout(() => toast.classList.remove('show'), 2000);
-        }
-        
-        let panning = false, dragNode = null, panStart = {x:0,y:0};
-        
-        document.addEventListener('keydown', e => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            
-            if (e.ctrlKey || e.metaKey) {
-                switch(e.key.toLowerCase()) {
-                    case 'z': e.preventDefault(); undo(); break;
-                    case 'y': e.preventDefault(); redo(); break;
-                    case 'c': e.preventDefault(); copyNode(); break;
-                    case 'v': e.preventDefault(); pasteNode(); break;
-                    case 's': 
-                        e.preventDefault(); 
-                        if (e.shiftKey) saveFileAs();
-                        else saveFile();
-                        break;
-                    case 'o': e.preventDefault(); openFile(); break;
-                }
-            } else {
-                switch(e.key) {
-                    case 'Delete': case 'Backspace': 
-                        if (selectedIndex >= 0) { e.preventDefault(); deleteSelectedNode(); }
-                        break;
-                    case 'Escape':
-                        closeAllPanels();
-                        if (connecting) { connecting = null; renderConnections(); }
-                        break;
-                }
-            }
+  /** @typedef {{ key: string, val: string }} Cond */
+  /** @typedef {{ text: string, targetIndex: number, conditions: Cond[] }} ChoiceRow */
+  /** @typedef {{ actorId: number, dialogueText: string, isChoiceNode: boolean, animationTrigger: string, nextIndex: number, choices: ChoiceRow[] | null, pos: {x:number,y:number}, actorSet?: boolean }} EdNode */
+
+  const LS_KEY = 'dialogue_editor_v2';
+  const SNAP = 16;
+
+  /** 与 DialogueSystem 统一映射一致；导出 JSON 仍只写 actorId 数字 */
+  const ACTOR_OPTIONS = [
+    { id: 0, name: '孟忘' },
+    { id: 1, name: '孟婆' },
+    { id: 2, name: '无主之魂' },
+    { id: 3, name: '渔夫' },
+    { id: 4, name: '肉包子' },
+    { id: 5, name: '佃户' },
+  ];
+
+  function actorLabel(actorId) {
+    const o = ACTOR_OPTIONS.find((a) => a.id === actorId);
+    return o ? o.name : '（未在表内 ID ' + actorId + '）';
+  }
+
+  function actorSelectHtml(selectedId) {
+    let html = ACTOR_OPTIONS.map(
+      (a) => `<option value="${a.id}"${selectedId === a.id ? ' selected' : ''}>${a.name}</option>`
+    ).join('');
+    if (!ACTOR_OPTIONS.some((a) => a.id === selectedId)) {
+      html += `<option value="${selectedId}" selected>（未在表内）ID ${selectedId}</option>`;
+    }
+    return html;
+  }
+
+  const state = {
+    name: 'NewDialogue',
+    nodes: /** @type {EdNode[]} */ ([]),
+    sel: -1,
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    connect: /** @type {null | { from: number, kind: 'line'|'choice', ci?: number }} */ (null),
+    drag: /** @type {null | { i: number, ox: number, oy: number, px: number, py: number }} */ (null),
+    pan: /** @type {null | { x: number, y: number }} */ (null),
+    fileHandle: /** @type {FileSystemFileHandle | null} */ (null),
+    undo: /** @type {string[]} */ ([]),
+    undoMax: 80,
+    listDrag: /** @type {null | { from: number }} */ (null),
+    /** 弹窗选目标时暂存连线来源 */
+    modalConnect: /** @type {null | { from: number, kind: 'line'|'choice', ci?: number, drop: {x:number,y:number} }} */ (null),
+  };
+
+  /** 视为「已填角色」：用户在属性里确认过 actor（用于前序节点列表） */
+  function isActorFilled(n) {
+    return !!n.actorSet;
+  }
+
+  /** 前序台词节点：下标小于 from、非分支、已填角色 */
+  function priorLineNodesWithActor(from) {
+    const out = [];
+    for (let i = 0; i < from; i++) {
+      const n = state.nodes[i];
+      if (!n.isChoiceNode && isActorFilled(n)) out.push(i);
+    }
+    return out;
+  }
+
+  const $ = (id) => document.getElementById(id);
+  const wrap = $('wrap');
+  const canvas = $('canvas');
+  const edges = $('edges');
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  }
+
+  function toast(msg, err) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (err ? ' err' : '');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { t.className = 'toast'; }, 2400);
+  }
+
+  function snapshot() {
+    return JSON.stringify({ name: state.name, nodes: state.nodes.map(n => ({ ...n, choices: n.choices ? n.choices.map(c => ({ ...c, conditions: (c.conditions || []).map(x => ({ ...x })) })) : null })) });
+  }
+
+  /** 在数据已变更后调用：把当前整图记入撤销栈（栈顶 = 当前状态） */
+  function pushUndo() {
+    const s = snapshot();
+    if (state.undo.length && state.undo[state.undo.length - 1] === s) return;
+    state.undo.push(s);
+    if (state.undo.length > state.undoMax) state.undo.shift();
+    $('btnUndo').disabled = state.undo.length <= 1;
+  }
+
+  function resetUndoStack() {
+    state.undo = [snapshot()];
+    $('btnUndo').disabled = true;
+  }
+
+  function applySnapshot(json) {
+    try {
+      const o = JSON.parse(json);
+      state.name = o.name || 'NewDialogue';
+      state.nodes = o.nodes || [];
+      if (!state.nodes.length) state.sel = -1;
+      else state.sel = Math.max(0, Math.min(state.sel, state.nodes.length - 1));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function undo() {
+    if (state.undo.length <= 1) return;
+    state.undo.pop();
+    const prev = state.undo[state.undo.length - 1];
+    applySnapshot(prev);
+    renderAll();
+    toast('已撤销');
+  }
+
+  /** 重映射引用：旧下标 -> 新下标 */
+  function remapRefs(map) {
+    const M = map;
+    function r(ix) {
+      if (ix < 0) return -1;
+      const v = M[ix];
+      return v === undefined ? -1 : v;
+    }
+    state.nodes.forEach(n => {
+      if (!n.isChoiceNode) {
+        n.nextIndex = r(n.nextIndex);
+      } else if (n.choices) {
+        n.choices.forEach(c => { c.targetIndex = r(c.targetIndex); });
+      }
+    });
+  }
+
+  /** 删除下标 del 后，压缩引用 */
+  function remapAfterDelete(del) {
+    state.nodes.forEach(n => {
+      if (!n.isChoiceNode) {
+        const t = n.nextIndex;
+        if (t === del) n.nextIndex = -1;
+        else if (t > del) n.nextIndex = t - 1;
+      } else if (n.choices) {
+        n.choices.forEach(c => {
+          const t = c.targetIndex;
+          if (t === del) c.targetIndex = -1;
+          else if (t > del) c.targetIndex = t - 1;
         });
-        
-        document.addEventListener('mousedown', e => {
-            const menu = document.getElementById('contextMenu');
-            if (menu.classList.contains('show') && !e.target.closest('.context-menu')) {
-                hideMenu();
-            }
-        });
-        
-        container.addEventListener('mousedown', e => {
-            mouseX = e.clientX; mouseY = e.clientY;
-            
-            const port = e.target.closest('.port');
-            if (port) {
-                const nodeEl = port.closest('.node');
-                if (nodeEl) {
-                    const idx = parseInt(nodeEl.dataset.index);
-                    const ptype = port.dataset.port;
-                    if (ptype === 'output' || ptype === 'choice') {
-                        connecting = { from: idx, port: ptype, ci: parseInt(port.dataset.ci)||0 };
-                        e.preventDefault();
-                        return;
-                    }
-                }
-            }
-            
-            const nodeEl = e.target.closest('.node');
-            if (nodeEl) {
-                const idx = parseInt(nodeEl.dataset.index);
-                selectNode(idx);
-                dragNode = { idx, ox: dialogueData.nodes[idx].position.x, oy: dialogueData.nodes[idx].position.y, mx: e.clientX, my: e.clientY };
-                e.preventDefault();
-                return;
-            }
-            
-            if (e.target === container || e.target === canvas || e.target.tagName === 'svg' || e.target.tagName === 'path') {
-                if (connecting) {
-                    connecting = null;
-                    renderConnections();
-                    return;
-                }
-                panning = true;
-                panStart = {x: e.clientX, y: e.clientY};
-                selectNode(-1);
-            }
-        });
-        
-        document.addEventListener('mousemove', e => {
-            mouseX = e.clientX; mouseY = e.clientY;
-            
-            if (panning) { 
-                panX += (e.clientX - panStart.x)/zoom; 
-                panY += (e.clientY - panStart.y)/zoom; 
-                panStart={x:e.clientX,y:e.clientY}; 
-                updateTransform(); 
-            }
-            
-            if (dragNode) {
-                const node = dialogueData.nodes[dragNode.idx];
-                node.position.x = snapToGrid(dragNode.ox + (e.clientX - dragNode.mx)/zoom);
-                node.position.y = snapToGrid(dragNode.oy + (e.clientY - dragNode.my)/zoom);
-                render();
-            }
-            
-            if (connecting) renderConnections();
-        });
-        
-        document.addEventListener('mouseup', e => {
-            mouseX = e.clientX; mouseY = e.clientY;
-            
-            if (connecting) {
-                const port = e.target.closest('.port');
-                if (port && port.dataset.port === 'input') {
-                    const nodeEl = port.closest('.node');
-                    if (nodeEl) {
-                        const toIdx = parseInt(nodeEl.dataset.index);
-                        saveHistory();
-                        const node = dialogueData.nodes[connecting.from];
-                        if (connecting.port === 'choice') node.choices[connecting.ci].targetNodeIndex = dialogueData.nodes[toIdx].nodeId;
-                        else node.nextNodeIndex = dialogueData.nodes[toIdx].nodeId;
-                        connecting = null;
-                        render();
-                    }
-                } else if (!e.target.closest('.context-menu')) {
-                    const menu = document.getElementById('contextMenu');
-                    menu.innerHTML = `
-                        <button onclick="addNodeAtPort('dialogue')">🔵 对话节点</button>
-                        <button onclick="addNodeAtPort('choice')">🟣 选择节点</button>
-                        <div class="context-menu-divider"></div>
-                        <button onclick="connectToEnd()">⚫ 连接结束</button>
-                    `;
-                    menu.dataset.from = connecting.from;
-                    menu.dataset.port = connecting.port;
-                    menu.dataset.ci = connecting.ci;
-                    menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
-                    menu.style.top = Math.min(e.clientY, window.innerHeight - 150) + 'px';
-                    menu.classList.add('show');
-                    const rect = container.getBoundingClientRect();
-                    pendingConnection = {
-                        from: connecting.from,
-                        port: connecting.port,
-                        ci: connecting.ci,
-                        endX: (mouseX - rect.left) / zoom - panX,
-                        endY: (mouseY - rect.top) / zoom - panY
-                    };
-                    connecting = null;
-                    renderConnections();
-                }
-            }
-            
-            if (dragNode) {
-                saveHistory();
-            }
-            
-            panning = false;
-            dragNode = null;
-        });
-        
-        function addNodeAtPort(type) {
-            if (!pendingConnection) return;
-            const from = pendingConnection.from;
-            const port = pendingConnection.port;
-            const ci = pendingConnection.ci;
-            const x = snapToGrid(pendingConnection.endX - 90);
-            const y = snapToGrid(pendingConnection.endY - 40);
-            
-            hideMenu();
-            pendingConnection = null;
-            addNode(type, x, y, { from: from, port: port, ci: ci });
+      }
+    });
+  }
+
+  /**
+   * 列表顺序变更：oldOrder 为原数组引用列表，newOrder 为新顺序的同一批对象
+   */
+  function reorderNodes(oldArr, newArr) {
+    const oldToNew = new Array(oldArr.length);
+    for (let oi = 0; oi < oldArr.length; oi++) {
+      const obj = oldArr[oi];
+      oldToNew[oi] = newArr.indexOf(obj);
+    }
+    state.nodes = newArr;
+    remapRefs(oldToNew);
+  }
+
+  function defaultPos(i) {
+    return { x: 80 + (i % 4) * 240, y: 80 + Math.floor(i / 4) * 140 };
+  }
+
+  function ensurePos() {
+    state.nodes.forEach((n, i) => {
+      if (!n.pos || typeof n.pos.x !== 'number') n.pos = defaultPos(i);
+      if (n.actorSet === undefined) n.actorSet = false;
+    });
+  }
+
+  /** 空工程时保证至少一个台词节点（入口 [0]） */
+  function ensureFirstNode() {
+    if (state.nodes.length > 0) return;
+    state.nodes.push({
+      actorId: 0,
+      dialogueText: '',
+      isChoiceNode: false,
+      animationTrigger: '',
+      nextIndex: -1,
+      choices: null,
+      actorSet: true,
+      pos: defaultPos(0),
+    });
+    state.sel = 0;
+  }
+
+  /** 全图至少保留一个「台词」节点（可为空文本）；仅当只剩分支等时追加 */
+  function ensureAtLeastOneLineNode() {
+    if (state.nodes.some(n => !n.isChoiceNode)) return;
+    const i = state.nodes.length;
+    state.nodes.push({
+      actorId: 0,
+      dialogueText: '',
+      isChoiceNode: false,
+      animationTrigger: '',
+      nextIndex: -1,
+      choices: null,
+      actorSet: false,
+      pos: defaultPos(i),
+    });
+    if (state.sel < 0) state.sel = i;
+  }
+
+  function addLine() {
+    const i = state.nodes.length;
+    state.nodes.push({
+      actorId: 0,
+      dialogueText: '',
+      isChoiceNode: false,
+      animationTrigger: '',
+      nextIndex: -1,
+      choices: null,
+      actorSet: false,
+      pos: defaultPos(i),
+    });
+    state.sel = i;
+    pushUndo();
+    persist();
+    renderAll();
+  }
+
+  function addChoice() {
+    const i = state.nodes.length;
+    state.nodes.push({
+      actorId: 0,
+      dialogueText: '',
+      isChoiceNode: true,
+      animationTrigger: '',
+      nextIndex: -1,
+      choices: [{ text: '选项 A', targetIndex: -1, conditions: [] }],
+      actorSet: false,
+      pos: defaultPos(i),
+    });
+    state.sel = i;
+    pushUndo();
+    persist();
+    renderAll();
+  }
+
+  function deleteSel() {
+    if (state.sel < 0 || state.sel >= state.nodes.length) return;
+    state.nodes.splice(state.sel, 1);
+    remapAfterDelete(state.sel);
+    state.sel = state.nodes.length ? Math.min(state.sel, state.nodes.length - 1) : -1;
+    ensureAtLeastOneLineNode();
+    pushUndo();
+    persist();
+    renderAll();
+  }
+
+  /** ---------- Unity JSON ---------- */
+  function fromUnityJson(obj) {
+    if (!obj || !Array.isArray(obj.nodes)) throw new Error('无效 JSON：需要 nodes 数组');
+    state.name = obj.DialogueName || obj.dialogueName || 'Dialogue';
+    state.nodes = obj.nodes.map((raw, i) => {
+      const isCh = !!raw.isChoiceNode;
+      const ed = /** @type {EdNode} */ ({
+        actorId: raw.actorId | 0,
+        dialogueText: raw.dialogueText != null ? String(raw.dialogueText) : '',
+        isChoiceNode: isCh,
+        animationTrigger: raw.animationTrigger != null ? String(raw.animationTrigger) : '',
+        nextIndex: isCh ? -1 : (typeof raw.nextNodeIndex === 'number' ? raw.nextNodeIndex : -1),
+        choices: null,
+        actorSet: true,
+        pos: defaultPos(i),
+      });
+      if (isCh && Array.isArray(raw.choices)) {
+        ed.choices = raw.choices.map(c => ({
+          text: c.choiceText != null ? String(c.choiceText) : '',
+          targetIndex: typeof c.targetNodeIndex === 'number' ? c.targetNodeIndex : -1,
+          conditions: Array.isArray(c.conditions) ? c.conditions.map(x => ({ key: x.conditionKey != null ? String(x.conditionKey) : '', val: x.expectedValue != null ? String(x.expectedValue) : '' })) : [],
+        }));
+      }
+      return ed;
+    });
+    ensurePos();
+  }
+
+  function toUnityJson() {
+    return {
+      DialogueName: state.name || 'Dialogue',
+      nodes: state.nodes.map((n, i) => {
+        const o = {
+          nodeId: i,
+          actorId: n.actorId | 0,
+          dialogueText: n.dialogueText != null ? n.dialogueText : '',
+          nextNodeIndex: n.isChoiceNode ? -1 : (n.nextIndex | 0),
+          isChoiceNode: !!n.isChoiceNode,
+          animationTrigger: n.animationTrigger != null ? n.animationTrigger : '',
+        };
+        if (n.isChoiceNode && n.choices && n.choices.length) {
+          o.choices = n.choices.map(c => ({
+            choiceText: c.text != null ? c.text : '',
+            targetNodeIndex: typeof c.targetIndex === 'number' ? c.targetIndex : -1,
+            conditions: (c.conditions || []).map(x => ({ conditionKey: x.key || '', expectedValue: x.val || '' })),
+          }));
         }
-        
-        function connectToEnd() {
-            if (!pendingConnection) return;
-            const from = pendingConnection.from;
-            const port = pendingConnection.port;
-            const ci = pendingConnection.ci;
-            saveHistory();
-            const node = dialogueData.nodes[from];
-            if (port === 'choice') node.choices[ci].targetNodeIndex = -1;
-            else node.nextNodeIndex = -1;
-            hideMenu();
-            pendingConnection = null;
-            render();
-        }
-        
-        container.addEventListener('wheel', e => {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            zoom = Math.max(0.3, Math.min(3, zoom + delta));
-            updateTransform();
+        return o;
+      }),
+    };
+  }
+
+  function validate() {
+    const n = state.nodes.length;
+    const bad = [];
+    if (n === 0) bad.push('nodes 为空');
+    state.nodes.forEach((node, i) => {
+      if (!node.isChoiceNode) {
+        const t = node.nextIndex;
+        if (t !== -1 && (t < 0 || t >= n || t === i)) bad.push(`[${i}] nextIndex=${t} 非法`);
+      } else {
+        if (!node.choices || node.choices.length === 0) bad.push(`[${i}] 分支节点无选项`);
+        (node.choices || []).forEach((c, k) => {
+          const t = c.targetIndex;
+          if (t !== -1 && (t < 0 || t >= n || t === i)) bad.push(`[${i}] 选项${k + 1} target=${t} 非法`);
         });
-        
-        document.getElementById('minimap').addEventListener('click', e => {
-            const rect = e.target.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            dialogueData.nodes.forEach(n => {
-                minX = Math.min(minX, n.position.x);
-                maxX = Math.max(maxX, n.position.x + 180);
-                minY = Math.min(minY, n.position.y);
-                maxY = Math.max(maxY, n.position.y + 100);
-            });
-            
-            const padding = 50;
-            minX -= padding; maxX += padding; minY -= padding; maxY += padding;
-            
-            const scaleX = rect.width / (maxX - minX);
-            const scaleY = rect.height / (maxY - minY);
-            const scale = Math.min(scaleX, scaleY);
-            
-            const containerRect = container.getBoundingClientRect();
-            panX = -(x / scale + minX - containerRect.width / zoom / 2);
-            panY = -(y / scale + minY - containerRect.height / zoom / 2);
-            updateTransform();
-        });
-        
-        function init() {
-            initActorTypeSelect();
-            const cached = loadFromLocalStorage();
-            if (cached && cached.nodes && cached.nodes.length > 0) {
-                dialogueData = cached;
-                updateMaxId();
-                showToast('已恢复上次编辑的数据');
-            } else {
-                addNode('start', 100, 150);
-            }
-            historyManager.push(dialogueData);
-            render();
+      }
+    });
+    return bad;
+  }
+
+  function persist() {
+    try {
+      localStorage.setItem(LS_KEY, snapshot());
+    } catch (e) { /* ignore */ }
+  }
+
+  /** ---------- 画布 ---------- */
+  function updateTransform() {
+    canvas.style.transform = `translate(${state.panX}px,${state.panY}px) scale(${state.zoom})`;
+    $('zoomLab').textContent = Math.round(state.zoom * 100) + '%';
+    const bad = validate();
+    $('statLab').textContent = bad.length ? ('校验: ' + bad.slice(0, 2).join('；')) : ('节点 ' + state.nodes.length + ' · 入口 [0]');
+  }
+
+  /**
+   * 视口坐标 → 画布内坐标（与 node.pos、SVG 连线一致）。
+   * #canvas 为 translate(panX, panY) scale(zoom)，origin 0 0，且左上角对齐 #wrap 内容区原点。
+   */
+  function clientToCanvasLocal(clientX, clientY) {
+    const r = wrap.getBoundingClientRect();
+    const x = (clientX - r.left - state.panX) / state.zoom;
+    const y = (clientY - r.top - state.panY) / state.zoom;
+    return { x, y };
+  }
+
+  function bezier(x1, y1, x2, y2) {
+    const dx = Math.max(48, Math.abs(x2 - x1) * 0.45);
+    return `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+  }
+
+  function snapPos(x, y) {
+    return {
+      x: Math.round(x / SNAP) * SNAP,
+      y: Math.round(y / SNAP) * SNAP,
+    };
+  }
+
+  /** 屏幕坐标下查找最近的「入」端口，在 maxPx 内则视为吸附连接 */
+  function findNearestInputPort(clientX, clientY, maxPx) {
+    let best = /** @type {null | { idx: number, d: number }} */ (null);
+    canvas.querySelectorAll('.port-in').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const d = Math.hypot(clientX - cx, clientY - cy);
+      const idx = +el.dataset.to;
+      if (d <= maxPx && (!best || d < best.d)) best = { idx, d };
+    });
+    return best ? best.idx : -1;
+  }
+
+  function applyWire(conn, toIdx) {
+    const from = conn.from;
+    if (toIdx < 0 || toIdx >= state.nodes.length || toIdx === from) return;
+    if (conn.kind === 'line') {
+      if (state.nodes[from].isChoiceNode) return;
+      state.nodes[from].nextIndex = toIdx;
+    } else if (conn.kind === 'choice' && conn.ci != null) {
+      if (!state.nodes[from].isChoiceNode) return;
+      const ch = state.nodes[from].choices;
+      if (ch && ch[conn.ci]) ch[conn.ci].targetIndex = toIdx;
+    }
+    pushUndo();
+    persist();
+  }
+
+  function createChoiceAndWire(conn, pos) {
+    const fromNode = state.nodes[conn.from];
+    if (!fromNode) return;
+    const p = snapPos(pos.x, pos.y);
+    const newIdx = state.nodes.length;
+    state.nodes.push({
+      actorId: 0,
+      dialogueText: '',
+      isChoiceNode: true,
+      animationTrigger: '',
+      nextIndex: -1,
+      choices: [{ text: '选项 A', targetIndex: -1, conditions: [] }],
+      actorSet: false,
+      pos: { x: p.x, y: p.y },
+    });
+    if (conn.kind === 'line') {
+      state.nodes[conn.from].nextIndex = newIdx;
+    } else if (conn.kind === 'choice' && conn.ci != null) {
+      const ch = state.nodes[conn.from].choices;
+      if (ch && ch[conn.ci]) ch[conn.ci].targetIndex = newIdx;
+    }
+    state.sel = newIdx;
+    pushUndo();
+    persist();
+    toast('已新建选择并连接');
+  }
+
+  function createDialogueAndWire(conn, pos, actorId) {
+    const fromNode = state.nodes[conn.from];
+    if (!fromNode) return;
+    const p = snapPos(pos.x, pos.y);
+    const newIdx = state.nodes.length;
+    state.nodes.push({
+      actorId: actorId,
+      dialogueText: '',
+      isChoiceNode: false,
+      animationTrigger: '',
+      nextIndex: -1,
+      choices: null,
+      actorSet: true,
+      pos: { x: p.x, y: p.y },
+    });
+    if (conn.kind === 'line') {
+      state.nodes[conn.from].nextIndex = newIdx;
+    } else if (conn.kind === 'choice' && conn.ci != null) {
+      const ch = state.nodes[conn.from].choices;
+      if (ch && ch[conn.ci]) ch[conn.ci].targetIndex = newIdx;
+    }
+    state.sel = newIdx;
+    pushUndo();
+    persist();
+    toast('已新建对话并连接');
+  }
+
+  function openConnectTargetModal(conn, clientX, clientY) {
+    const p0 = clientToCanvasLocal(clientX, clientY);
+    const drop = snapPos(p0.x, p0.y);
+
+    const priorRoles = Array.from(
+      new Set(
+        priorLineNodesWithActor(conn.from).map((idx) => state.nodes[idx].actorId)
+      )
+    );
+    const defaultActorId = 0;
+    let selectedActorId = priorRoles.length ? priorRoles[0] : defaultActorId;
+
+    state.modalConnect = { ...conn, drop };
+
+    const opts = $('modalOpts');
+    opts.innerHTML = '';
+
+    const b1 = document.createElement('button');
+    b1.type = 'button';
+    b1.className = 'opt primary';
+    b1.innerHTML = '<span class="tag">1.</span> 选择';
+    b1.onclick = () => {
+      closeConnectModal();
+      createChoiceAndWire(conn, drop);
+      renderAll();
+    };
+    opts.appendChild(b1);
+
+    const b2 = document.createElement('button');
+    b2.type = 'button';
+    b2.className = 'opt';
+    b2.innerHTML = '<span class="tag">2.</span> 对话';
+    b2.onclick = () => {
+      closeConnectModal();
+      createDialogueAndWire(conn, drop, priorRoles.length ? selectedActorId : defaultActorId);
+      renderAll();
+    };
+    opts.appendChild(b2);
+
+    if (priorRoles.length) {
+      const wrapSel = document.createElement('div');
+      wrapSel.style.margin = '6px 0 10px';
+      wrapSel.innerHTML = `
+        <label style="display:block;font-size:11px;color:#8b92a8;margin-bottom:4px;">对话角色分类（前序已出现）</label>
+        <select id="modalActorSelect" style="width:100%;padding:8px;border-radius:6px;border:1px solid #2a3145;background:#121520;color:#e8e8ec;font-size:12px;">
+          ${priorRoles.map((actorId) => `<option value="${actorId}">${escapeHtml(actorLabel(actorId))}</option>`).join('')}
+        </select>`;
+      opts.appendChild(wrapSel);
+      const sel = wrapSel.querySelector('#modalActorSelect');
+      sel.onchange = () => {
+        selectedActorId = +sel.value;
+        createDialogueBtn.innerHTML = `<span class="tag">2.1</span> 创建对话（${escapeHtml(actorLabel(selectedActorId))}）`;
+      };
+    }
+
+    const createDialogueBtn = document.createElement('button');
+    createDialogueBtn.type = 'button';
+    createDialogueBtn.className = 'opt primary';
+    createDialogueBtn.style.marginTop = priorRoles.length ? '0' : '8px';
+    createDialogueBtn.innerHTML = priorRoles.length
+      ? `<span class="tag">2.1</span> 创建对话（${escapeHtml(actorLabel(selectedActorId))}）`
+      : `<span class="tag">2.1</span> 创建默认对话（${escapeHtml(actorLabel(defaultActorId))}）`;
+    createDialogueBtn.onclick = () => {
+      closeConnectModal();
+      createDialogueAndWire(conn, drop, priorRoles.length ? selectedActorId : defaultActorId);
+      renderAll();
+    };
+    opts.appendChild(createDialogueBtn);
+
+    if (!priorRoles.length) {
+      const tip = document.createElement('p');
+      tip.className = 'sub';
+      tip.style.marginTop = '6px';
+      tip.textContent = '暂无前序角色分类，已按默认角色创建。';
+      opts.appendChild(tip);
+    }
+
+    $('modalBg').classList.add('on');
+    $('modalBg').setAttribute('aria-hidden', 'false');
+  }
+
+  function closeConnectModal() {
+    $('modalBg').classList.remove('on');
+    $('modalBg').setAttribute('aria-hidden', 'true');
+    state.modalConnect = null;
+  }
+
+  function portCenter(nodeEl, sel) {
+    const el = nodeEl.querySelector(sel);
+    if (!el) return { x: 0, y: 0 };
+    const r1 = el.getBoundingClientRect();
+    return clientToCanvasLocal(r1.left + r1.width / 2, r1.top + r1.height / 2);
+  }
+
+  function drawEdges(preview) {
+    const paths = [];
+    state.nodes.forEach((node, i) => {
+      const nel = canvas.querySelector(`.node[data-i="${i}"]`);
+      if (!nel) return;
+      if (!node.isChoiceNode) {
+        const t = node.nextIndex;
+        if (t >= 0 && t < state.nodes.length) {
+          const el2 = canvas.querySelector(`.node[data-i="${t}"]`);
+          if (el2) {
+            const a = portCenter(nel, '.port-out');
+            const b = portCenter(el2, '.port-in');
+            paths.push(`<path class="n" d="${bezier(a.x, a.y, b.x, b.y)}"/>`);
+          }
         }
-        
-        init();
-    </script>
+      } else if (node.choices) {
+        node.choices.forEach((c, ci) => {
+          const t = c.targetIndex;
+          if (t < 0 || t >= state.nodes.length) return;
+          const el2 = canvas.querySelector(`.node[data-i="${t}"]`);
+          if (!el2) return;
+          const a = portCenter(nel, `.port-ch[data-ci="${ci}"]`);
+          const b = portCenter(el2, '.port-in');
+          paths.push(`<path class="c" d="${bezier(a.x, a.y, b.x, b.y)}"/>`);
+        });
+      }
+    });
+    if (preview) {
+      const a = portCenter(preview.el, preview.outSel);
+      paths.push(`<path class="pre" d="${bezier(a.x, a.y, preview.x, preview.y)}"/>`);
+    }
+    edges.innerHTML = paths.join('');
+    const vb = 4000;
+    edges.setAttribute('viewBox', `0 0 ${vb} ${vb}`);
+    edges.style.width = vb + 'px';
+    edges.style.height = vb + 'px';
+  }
+
+  function renderNodes() {
+    const frag = document.createDocumentFragment();
+    state.nodes.forEach((node, i) => {
+      const div = document.createElement('div');
+      div.className = 'node' + (state.sel === i ? ' sel' : '');
+      div.dataset.i = String(i);
+      div.style.left = node.pos.x + 'px';
+      div.style.top = node.pos.y + 'px';
+      const hd = node.isChoiceNode ? 'choice' : 'line';
+      const title = node.isChoiceNode ? `分支 [${i}]` : `台词 [${i}]`;
+      let outs = '';
+      if (node.isChoiceNode && node.choices) {
+        node.choices.forEach((c, ci) => {
+          outs += `<span class="port port-ch" data-ci="${ci}" title="拖到目标"><i></i>${(c.text || '选项').slice(0, 8)}</span>`;
+        });
+      } else {
+        outs = `<span class="port port-out" title="下一节点"><i></i>下一</span>`;
+      }
+      div.innerHTML = `
+        <div class="hd ${hd}">${title}<span style="margin-left:auto;font-size:10px;color:#6b7289;">${escapeHtml(actorLabel(node.actorId))}</span></div>
+        <div class="bd">${escapeHtml((node.dialogueText || '（空）').slice(0, 120))}</div>
+        <div class="ports">
+          <span class="port port-in" data-to="${i}" title="连入"><i></i>入</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">${outs}</div>
+        </div>`;
+      frag.appendChild(div);
+    });
+    while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
+    canvas.appendChild(edges);
+    canvas.appendChild(frag);
+    requestAnimationFrame(() => drawEdges(null));
+  }
+
+  function renderList() {
+    const list = $('nodeList');
+    list.innerHTML = state.nodes.map((n, i) => `
+      <div class="nitem${state.sel === i ? ' on' : ''}" data-i="${i}" draggable="true">
+        <span class="idx">[${i}]</span>
+        <div style="flex:1;min-width:0;">
+          <div>${n.isChoiceNode ? '分支' : '台词'} · ${escapeHtml(actorLabel(n.actorId))}</div>
+          <div class="snippet">${escapeHtml((n.dialogueText || '').slice(0, 40))}</div>
+        </div>
+      </div>`).join('');
+    list.querySelectorAll('.nitem').forEach(el => {
+      el.addEventListener('click', () => { state.sel = +el.dataset.i; renderAll(); });
+      el.addEventListener('dragstart', (e) => {
+        state.listDrag = { from: +el.dataset.i };
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      el.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+      el.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const from = state.listDrag && state.listDrag.from;
+        const to = +el.dataset.i;
+        state.listDrag = null;
+        if (from === undefined || from === to) return;
+        const old = state.nodes.slice();
+        const moved = old[from];
+        const copy = old.slice();
+        copy.splice(from, 1);
+        copy.splice(to, 0, moved);
+        reorderNodes(state.nodes, copy);
+        state.sel = state.nodes.indexOf(moved);
+        pushUndo();
+        persist();
+        renderAll();
+        toast('已重排节点并更新所有跳转下标');
+      });
+    });
+  }
+
+  function renderInspector() {
+    const box = $('insBody');
+    if (state.sel < 0 || state.sel >= state.nodes.length) {
+      box.innerHTML = '<p style="color:#6b7289;font-size:12px;">未选中节点</p>';
+      return;
+    }
+    const n = state.nodes[state.sel];
+    const i = state.sel;
+    let html = `
+      <div class="field"><label>角色（对应 Unity 内 actorId，保存为数字）</label>
+        <select id="fActor">${actorSelectHtml(n.actorId)}</select></div>
+      <div class="field"><label>台词 dialogueText</label>
+        <textarea id="fText"></textarea></div>
+      <div class="field"><label>animationTrigger</label>
+        <input type="text" id="fAnim" /></div>`;
+    if (!n.isChoiceNode) {
+      html += `<div class="field"><label>下一节点 nextIndex（数组下标，-1 结束）</label>
+        <select id="fNext">` + nextOptions(i, n.nextIndex) + `</select></div>`;
+    } else {
+      html += `<div class="field"><label>分支选项</label>
+        <div id="chBox"></div>
+        <button type="button" class="btn-g" id="btnAddCh" style="margin-top:8px;width:100%">+ 添加选项</button></div>`;
+    }
+    box.innerHTML = html;
+    $('fText').value = n.dialogueText || '';
+    $('fAnim').value = n.animationTrigger || '';
+
+    $('fActor').onchange = () => {
+      n.actorId = +$('fActor').value | 0;
+      n.actorSet = true;
+      persist();
+      renderNodes();
+      renderList();
+    };
+    $('fText').oninput = () => { n.dialogueText = $('fText').value; persist(); renderNodes(); renderList(); };
+    $('fAnim').oninput = () => { n.animationTrigger = $('fAnim').value; persist(); };
+
+    if (!n.isChoiceNode) {
+      $('fNext').onchange = () => {
+        n.nextIndex = +$('fNext').value;
+        pushUndo();
+        persist();
+        renderNodes();
+        drawEdges(null);
+      };
+    } else {
+      renderChoiceEditor(n);
+      $('btnAddCh').onclick = () => {
+        n.choices = n.choices || [];
+        n.choices.push({ text: '新选项', targetIndex: -1, conditions: [] });
+        pushUndo();
+        persist();
+        renderAll();
+      };
+    }
+  }
+
+  function nextOptions(selfIdx, cur) {
+    let o = `<option value="-1" ${cur === -1 ? 'selected' : ''}>−1 结束对话</option>`;
+    state.nodes.forEach((_, j) => {
+      if (j === selfIdx) return;
+      o += `<option value="${j}" ${cur === j ? 'selected' : ''}>[${j}]</option>`;
+    });
+    return o;
+  }
+
+  function targetOptions(selfIdx, cur) {
+    return nextOptions(selfIdx, cur);
+  }
+
+  function renderChoiceEditor(n) {
+    const chBox = $('chBox');
+    if (!n.choices) n.choices = [];
+    chBox.innerHTML = n.choices.map((c, ci) => `
+      <div style="border:1px solid #2a3145;border-radius:8px;padding:8px;margin-bottom:8px;background:#121520;">
+        <div class="field"><label>选项 ${ci + 1} 文本</label>
+          <input type="text" class="ch-txt" data-ci="${ci}" /></div>
+        <div class="field"><label>目标下标 targetNodeIndex</label>
+          <select class="ch-tgt" data-ci="${ci}">${targetOptions(state.sel, c.targetIndex)}</select></div>
+        <button type="button" class="btn-r ch-del" data-ci="${ci}" style="width:100%">删除此选项</button>
+      </div>`).join('');
+
+    chBox.querySelectorAll('.ch-txt').forEach(inp => {
+      const ci = +inp.dataset.ci;
+      inp.value = n.choices[ci].text || '';
+      inp.oninput = () => {
+        const cix = +inp.dataset.ci;
+        n.choices[cix].text = inp.value;
+        persist();
+        renderNodes();
+        renderList();
+      };
+    });
+    chBox.querySelectorAll('.ch-tgt').forEach(sel => {
+      sel.onchange = () => {
+        const ci = +sel.dataset.ci;
+        n.choices[ci].targetIndex = +sel.value;
+        pushUndo();
+        persist();
+        renderNodes();
+        drawEdges(null);
+      };
+    });
+    chBox.querySelectorAll('.ch-del').forEach(btn => {
+      btn.onclick = () => {
+        const ci = +btn.dataset.ci;
+        if (n.choices.length <= 1) { toast('至少保留一个选项', true); return; }
+        n.choices.splice(ci, 1);
+        pushUndo();
+        persist();
+        renderAll();
+      };
+    });
+  }
+
+  /** 选中变化时更新列表、右侧属性区与画布节点高亮（不重建画布 DOM，避免打断拖拽） */
+  function refreshSelectionUi() {
+    $('btnDel').disabled = state.sel < 0;
+    canvas.querySelectorAll('.node').forEach((el) => {
+      el.classList.toggle('sel', +el.dataset.i === state.sel);
+    });
+    renderList();
+    renderInspector();
+  }
+
+  function renderAll() {
+    $('dlgName').value = state.name;
+    $('btnDel').disabled = state.sel < 0;
+    $('btnUndo').disabled = state.undo.length <= 1;
+    ensurePos();
+    renderNodes();
+    renderList();
+    renderInspector();
+    updateTransform();
+  }
+
+  function autoLayout() {
+    if (!state.nodes.length) return;
+    state.nodes.forEach((n, i) => {
+      n.pos = defaultPos(i);
+    });
+    pushUndo();
+    persist();
+    renderAll();
+    toast('已布局');
+  }
+
+  /** ---------- 交互 ---------- */
+  wrap.addEventListener('mousedown', (e) => {
+    // Left mouse button only for canvas interactions.
+    if (e.button !== 0) return;
+
+    // If a modal is open, prevent hidden-state interference with drag/connection.
+    if ($('modalBg').classList.contains('on')) {
+      closeConnectModal();
+    }
+
+    const t = /** @type {HTMLElement} */ (e.target);
+    const nodeEl = t.closest('.node');
+    const pr = t.closest('.port-out, .port-ch');
+    const pin = t.closest('.port-in');
+
+    if (pr && nodeEl) {
+      const from = +nodeEl.dataset.i;
+      const isCh = pr.classList.contains('port-ch');
+      state.connect = isCh ? { from, kind: 'choice', ci: +pr.dataset.ci } : { from, kind: 'line' };
+      e.preventDefault();
+      return;
+    }
+    if (nodeEl) {
+      // Starting node drag should cancel any stale connection preview state.
+      state.connect = null;
+      const i = +nodeEl.dataset.i;
+      state.sel = i;
+      refreshSelectionUi();
+      const n = state.nodes[i];
+      state.drag = { i, ox: n.pos.x, oy: n.pos.y, px: e.clientX, py: e.clientY };
+      e.preventDefault();
+      return;
+    }
+    // Left-click blank area: pan canvas.
+    if (!nodeEl && !pr && !pin) {
+      state.pan = { x: e.clientX, y: e.clientY };
+      state.sel = -1;
+      refreshSelectionUi();
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (state.drag) {
+      const d = state.drag;
+      const n = state.nodes[d.i];
+      n.pos.x = d.ox + (e.clientX - d.px) / state.zoom;
+      n.pos.y = d.oy + (e.clientY - d.py) / state.zoom;
+      n.pos.x = Math.round(n.pos.x / SNAP) * SNAP;
+      n.pos.y = Math.round(n.pos.y / SNAP) * SNAP;
+      const el = canvas.querySelector(`.node[data-i="${d.i}"]`);
+      if (el) { el.style.left = n.pos.x + 'px'; el.style.top = n.pos.y + 'px'; }
+      drawEdges(null);
+      return;
+    }
+    if (state.pan) {
+      state.panX += e.clientX - state.pan.x;
+      state.panY += e.clientY - state.pan.y;
+      state.pan = { x: e.clientX, y: e.clientY };
+      updateTransform();
+      drawEdges(null);
+      return;
+    }
+    if (state.connect) {
+      const nel = canvas.querySelector(`.node[data-i="${state.connect.from}"]`);
+      const outSel = state.connect.kind === 'line' ? '.port-out' : `.port-ch[data-ci="${state.connect.ci}"]`;
+      const { x, y } = clientToCanvasLocal(e.clientX, e.clientY);
+      drawEdges({ el: nel, outSel, x, y });
+    }
+  });
+
+  window.addEventListener('mouseup', (e) => {
+    if (state.drag) {
+      const d = state.drag;
+      const n = state.nodes[d.i];
+      if (n.pos.x !== d.ox || n.pos.y !== d.oy) pushUndo();
+      persist();
+      state.drag = null;
+    }
+    if (state.pan) state.pan = null;
+
+    if (state.connect) {
+      const conn = state.connect;
+      const t = /** @type {HTMLElement} */ (e.target);
+      const pin = t.closest('.port-in');
+      const nodeEl = t.closest('.node');
+      if (pin && nodeEl) {
+        const to = +nodeEl.querySelector('.port-in').dataset.to;
+        if (to !== conn.from) {
+          applyWire(conn, to);
+          toast('已连接 → [' + to + ']');
+        }
+      } else {
+        const near = findNearestInputPort(e.clientX, e.clientY, 56);
+        if (near >= 0 && near !== conn.from) {
+          applyWire(conn, near);
+          toast('已吸附连接到 [' + near + ']');
+        } else {
+          const saved = { from: conn.from, kind: conn.kind, ci: conn.ci };
+          state.connect = null;
+          openConnectTargetModal(saved, e.clientX, e.clientY);
+          renderAll();
+          return;
+        }
+      }
+      state.connect = null;
+      renderAll();
+      return;
+    }
+  });
+
+  wrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const z = e.deltaY > 0 ? -0.08 : 0.08;
+    state.zoom = Math.min(2.2, Math.max(0.35, state.zoom + z));
+    updateTransform();
+    drawEdges(null);
+  }, { passive: false });
+
+  $('dlgName').oninput = () => { state.name = $('dlgName').value; persist(); };
+
+  $('btnNew').onclick = () => {
+    if (!confirm('新建将清空当前内容（已自动缓存到浏览器）')) return;
+    state.name = 'NewDialogue';
+    state.nodes = [];
+    ensureFirstNode();
+    resetUndoStack();
+    persist();
+    renderAll();
+    toast('已新建（含首个台词节点）');
+  };
+
+  $('modalCancel').onclick = () => {
+    closeConnectModal();
+    renderAll();
+  };
+  $('modalBg').addEventListener('click', (ev) => {
+    if (ev.target.id === 'modalBg') {
+      closeConnectModal();
+      renderAll();
+    }
+  });
+  $('modalBox').addEventListener('click', (ev) => ev.stopPropagation());
+
+  $('btnAddLine').onclick = () => addLine();
+  $('btnAddChoice').onclick = () => addChoice();
+  $('btnDel').onclick = deleteSel;
+  $('btnLayout').onclick = autoLayout;
+
+  $('btnUndo').onclick = undo;
+
+  $('btnVal').onclick = () => {
+    const bad = validate();
+    if (bad.length) alert('问题：\n' + bad.join('\n'));
+    else toast('校验通过');
+  };
+
+  $('btnCopy').onclick = async () => {
+    const bad = validate();
+    if (bad.length) { if (!confirm('当前图有校验问题，仍复制？')) return; }
+    const txt = JSON.stringify(toUnityJson(), null, 2);
+    try {
+      await navigator.clipboard.writeText(txt);
+      toast('已复制到剪贴板');
+    } catch {
+      toast('复制失败', true);
+    }
+  };
+
+  $('btnOpen').onclick = () => $('fileIn').click();
+  $('fileIn').onchange = async (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    try {
+      const txt = await f.text();
+      fromUnityJson(JSON.parse(txt));
+      if (!state.nodes.length) ensureFirstNode();
+      else ensureAtLeastOneLineNode();
+      state.sel = state.nodes.length ? 0 : -1;
+      state.fileHandle = null;
+      resetUndoStack();
+      persist();
+      renderAll();
+      toast('已打开 ' + f.name);
+    } catch (err) {
+      toast('打开失败: ' + err.message, true);
+    }
+  };
+
+  $('btnSave').onclick = async () => {
+    const bad = validate();
+    if (bad.length) { if (!confirm('校验未通过，仍保存？\n' + bad.slice(0, 5).join('\n'))) return; }
+    const txt = JSON.stringify(toUnityJson(), null, 2);
+    if (window.showSaveFilePicker) {
+      try {
+        const h = await window.showSaveFilePicker({
+          suggestedName: (state.name || 'dialogue') + '.json',
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+        });
+        const w = await h.createWritable();
+        await w.write(txt);
+        await w.close();
+        state.fileHandle = h;
+        toast('已保存');
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+      }
+    }
+    const blob = new Blob([txt], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (state.name || 'dialogue') + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('已下载');
+  };
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $('modalBg').classList.contains('on')) {
+      closeConnectModal();
+      renderAll();
+      return;
+    }
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'Delete' || e.key === 'Backspace') deleteSel();
+    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+  });
+
+  /** init */
+  (function init() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) applySnapshot(raw);
+      else {
+        state.name = 'NewDialogue';
+        state.nodes = [];
+      }
+    } catch {
+      state.name = 'NewDialogue';
+      state.nodes = [];
+    }
+    if (!state.nodes.length) ensureFirstNode();
+    else ensureAtLeastOneLineNode();
+    state.sel = state.nodes.length ? 0 : -1;
+    resetUndoStack();
+    renderAll();
+  })();
+})();
+  </script>
 </body>
 </html>

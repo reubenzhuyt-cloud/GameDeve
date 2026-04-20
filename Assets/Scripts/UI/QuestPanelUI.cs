@@ -19,7 +19,6 @@ public class QuestPanelUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI questRewardText;
     
     [Header("Settings")]
-    [SerializeField] private KeyCode toggleKey = KeyCode.J;
     [SerializeField] private int maxDescriptionLength = 100;
     
     private List<GameObject> questItems = new List<GameObject>();
@@ -49,6 +48,11 @@ public class QuestPanelUI : MonoBehaviour
                 canvasGroup = gameObject.AddComponent<CanvasGroup>();
             }
         }
+
+        // New CanvasGroup defaults to alpha 1 — hide immediately so bootstrap does not flash one frame.
+        canvasGroup.alpha = 0f;
+        canvasGroup.interactable = false;
+        canvasGroup.blocksRaycasts = false;
         
         SetupTextOverflow();
     }
@@ -58,25 +62,25 @@ public class QuestPanelUI : MonoBehaviour
         if (questTitleText != null)
         {
             questTitleText.overflowMode = TextOverflowModes.Ellipsis;
-            questTitleText.enableWordWrapping = false;
+            questTitleText.textWrappingMode = TextWrappingModes.NoWrap;
         }
-        
+
         if (questDescriptionText != null)
         {
             questDescriptionText.overflowMode = TextOverflowModes.Ellipsis;
-            questDescriptionText.enableWordWrapping = true;
+            questDescriptionText.textWrappingMode = TextWrappingModes.Normal;
         }
-        
+
         if (questObjectivesText != null)
         {
             questObjectivesText.overflowMode = TextOverflowModes.Ellipsis;
-            questObjectivesText.enableWordWrapping = true;
+            questObjectivesText.textWrappingMode = TextWrappingModes.Normal;
         }
-        
+
         if (questRewardText != null)
         {
             questRewardText.overflowMode = TextOverflowModes.Ellipsis;
-            questRewardText.enableWordWrapping = true;
+            questRewardText.textWrappingMode = TextWrappingModes.Normal;
         }
     }
     
@@ -125,22 +129,6 @@ public class QuestPanelUI : MonoBehaviour
         UnregisterQuestManagerEvents();
     }
     
-    private void Update()
-    {
-        if (Input.GetKeyDown(toggleKey))
-        {
-            if (!UIManager.IsUIBlocked(UIType.QuestPanel))
-            {
-                TogglePanel();
-            }
-        }
-        
-        if (Input.GetKeyDown(KeyCode.Escape) && isOpen)
-        {
-            ClosePanel();
-        }
-    }
-    
     public void TogglePanel()
     {
         if (isOpen)
@@ -159,14 +147,25 @@ public class QuestPanelUI : MonoBehaviour
         {
             return;
         }
+
+        if (DialogueSystem.instance != null && DialogueSystem.instance.IsInDialogue())
+            return;
         
         isOpen = true;
-        if (canvasGroup != null)
+
+        if (UIManager.instance != null && UIManager.instance.IsPanelRegistered(UIType.QuestPanel))
+            UIManager.instance.Show(UIType.QuestPanel, true);
+        else
         {
-            canvasGroup.alpha = 1f;
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
+            gameObject.SetActive(true);
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 1f;
+                canvasGroup.interactable = true;
+                canvasGroup.blocksRaycasts = true;
+            }
         }
+
         RefreshQuestList();
         Time.timeScale = 0f;
         
@@ -179,17 +178,20 @@ public class QuestPanelUI : MonoBehaviour
     public void ClosePanel()
     {
         isOpen = false;
-        if (canvasGroup != null)
-        {
-            canvasGroup.alpha = 0f;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
-        }
         Time.timeScale = 1f;
         
         if (QuestTrackerUI.instance != null)
         {
             QuestTrackerUI.instance.OnQuestPanelClosed();
+        }
+
+        if (UIManager.instance != null && UIManager.instance.IsPanelRegistered(UIType.QuestPanel))
+            UIManager.instance.Hide(UIType.QuestPanel, true);
+        else if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
         }
     }
     

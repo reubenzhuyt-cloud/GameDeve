@@ -8,28 +8,55 @@ public class PlayerChatState : PlayerState
 
     }
     private UnityAction<DialogueData> onDialogueEndAction;
+    /// <summary>本帧是否走了「Q 光芒 → WeakSoulLightSoothe」路径；此时不应再对 <see cref="Player.dialogueLogic"/> 调 <c>OnDialogueEnd</c>（避免误改 <see cref="WeakSoulDialogueLogic"/> 等状态）。</summary>
+    private bool _sessionWasLightSoothe;
 
     public override void Enter()
     {
         base.Enter();
         player.SetVelocity(0);
+        _sessionWasLightSoothe = false;
 
         onDialogueEndAction = (DialogueData dialogue) =>
         {
+            if (player.pendingLightSootheSoul != null)
+            {
+                // 与 F 对话进度对齐：光芒安抚结束视为进入「被安抚」剧情状态（若同物体挂了 WeakSoulDialogueLogic）
+                var weakSoulLogic = player.pendingLightSootheSoul.GetComponent<WeakSoulDialogueLogic>()
+                    ?? player.pendingLightSootheSoul.GetComponentInParent<WeakSoulDialogueLogic>();
+                weakSoulLogic?.SetBeingSoothed();
+
+                player.pendingLightSootheSoul.CompleteLightSoothe();
+                player.StartLightSkillCD();
+                player.pendingLightSootheSoul = null;
+            }
+
+            player.TryRefreshInteractionTipAfterDialogue();
             player.stateMachine.ChangeState(player.idleState);
         };
         
         if (DialogueSystem.instance != null)
         {
             DialogueSystem.instance.onDialogueEnd.AddListener(onDialogueEndAction);
-            
-            if (player.currentNPC != null)
+
+            if (!string.IsNullOrEmpty(player.pendingLightSootheDialogueFile))
             {
-                player.currentNPC.Interact();
+                _sessionWasLightSoothe = true;
+                string file = player.pendingLightSootheDialogueFile;
+                player.pendingLightSootheDialogueFile = null;
+                DialogueSystem.instance.StartDialogue(file);
+                return;
             }
-            else if (player.currentInteractable != null)
+            
+            // 与 CanInteractWith + InteractableObject 配置一致：优先走 InteractableObject（引用完整），
+            // 避免同物体上另有 NPC 组件但对话引用未填时抢先 return，导致按 F 无反应。
+            if (player.currentInteractable != null)
             {
                 player.currentInteractable.Interact();
+            }
+            else if (player.currentNPC != null)
+            {
+                player.currentNPC.Interact();
             }
             else if (player.dialogueLogic != null)
             {
@@ -71,12 +98,15 @@ public class PlayerChatState : PlayerState
     {
         base.Exit();
 
-        DialogueSystem.instance.onDialogueEnd.RemoveListener(onDialogueEndAction);
-        
-        if (player.dialogueLogic != null)
+        if (DialogueSystem.instance != null)
         {
-            DialogueSystem.instance.onChoiceSelected.RemoveListener(OnChoiceSelected);
-            player.dialogueLogic.OnDialogueEnd();
+            DialogueSystem.instance.onDialogueEnd.RemoveListener(onDialogueEndAction);
+
+            if (player.dialogueLogic != null && !_sessionWasLightSoothe)
+            {
+                DialogueSystem.instance.onChoiceSelected.RemoveListener(OnChoiceSelected);
+                player.dialogueLogic.OnDialogueEnd();
+            }
         }
 
         onDialogueEndAction = null;

@@ -1,0 +1,53 @@
+{
+  "DialogueName": "NewDialogue",
+  "nodes": [
+    {
+      "nodeId": 0,
+      "actorId": 0,
+      "dialogueText": "老渔父，我行路几日，饿的厉害，可有食物，我可以画些符咒相抵",
+      "nextNodeIndex": 1,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 1,
+      "actorId": 3,
+      "dialogueText": "。。。。",
+      "nextNodeIndex": 2,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 2,
+      "actorId": 0,
+      "dialogueText": "老先生？",
+      "nextNodeIndex": 3,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 3,
+      "actorId": 3,
+      "dialogueText": "你今晚要是饿得睡不着，便去那庙里歇息吧",
+      "nextNodeIndex": 4,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 4,
+      "actorId": 0,
+      "dialogueText": "那庙里……可是有施粥的师傅吗？",
+      "nextNodeIndex": 5,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 5,
+      "actorId": 3,
+      "dialogueText": "好多年没有了。。。。",
+      "nextNodeIndex": -1,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    }
+  ]
+}

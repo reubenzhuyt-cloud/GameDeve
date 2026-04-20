@@ -19,4 +19,17 @@ public class DialogueObj : MonoBehaviour
     {
         return dialogueFileName;
     }
+
+    /// <summary>
+    /// If the list is empty (e.g. logic script added DialogueObj at runtime), set a single Resources/Dialogue file key (no .json).
+    /// </summary>
+    public void EnsureSingleDialogue(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName))
+            return;
+        if (dialogueFileName == null)
+            dialogueFileName = new List<string>();
+        if (dialogueFileName.Count == 0)
+            dialogueFileName.Add(fileName);
+    }
 }

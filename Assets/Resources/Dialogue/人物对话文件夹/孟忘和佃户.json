@@ -1,0 +1,138 @@
+{
+  "DialogueName": "NewDialogue",
+  "nodes": [
+    {
+      "nodeId": 0,
+      "actorId": 5,
+      "dialogueText": "小后生，你来干嘛",
+      "nextNodeIndex": 1,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 1,
+      "actorId": 5,
+      "dialogueText": "哦，你是那道士的徒弟吧，我跟你说，你师傅那符纸可真灵。",
+      "nextNodeIndex": 2,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 2,
+      "actorId": 5,
+      "dialogueText": "那女鬼向前天天来偷米，气得我们老爷都肥成猪了还要出来守着粮食",
+      "nextNodeIndex": 3,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 3,
+      "actorId": 5,
+      "dialogueText": "结果你师傅那符一贴，粮食还真就没有少过",
+      "nextNodeIndex": 4,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 4,
+      "actorId": 5,
+      "dialogueText": "小师傅你今天来干嘛",
+      "nextNodeIndex": 5,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 5,
+      "actorId": 0,
+      "dialogueText": "",
+      "nextNodeIndex": -1,
+      "isChoiceNode": true,
+      "animationTrigger": "",
+      "choices": [
+        {
+          "choiceText": "今年这日子什么光景？",
+          "targetNodeIndex": 6,
+          "conditions": []
+        },
+        {
+          "choiceText": "我来庄上歇息一下",
+          "targetNodeIndex": 8,
+          "conditions": []
+        },
+        {
+          "choiceText": "我是来换符纸哒",
+          "targetNodeIndex": 10,
+          "conditions": []
+        }
+      ]
+    },
+    {
+      "nodeId": 6,
+      "actorId": 5,
+      "dialogueText": "哎，我也弄不灵清，收成一年年不好",
+      "nextNodeIndex": 7,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 7,
+      "actorId": 0,
+      "dialogueText": "",
+      "nextNodeIndex": -1,
+      "isChoiceNode": true,
+      "animationTrigger": "",
+      "choices": [
+        {
+          "choiceText": "我来庄上歇息一下",
+          "targetNodeIndex": 8,
+          "conditions": []
+        },
+        {
+          "choiceText": "我是来更新符纸哒",
+          "targetNodeIndex": 10,
+          "conditions": []
+        }
+      ]
+    },
+    {
+      "nodeId": 8,
+      "actorId": 5,
+      "dialogueText": "老爷和管家都在困觉，现在不好招待",
+      "nextNodeIndex": 9,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 9,
+      "actorId": 5,
+      "dialogueText": "不过你进去坐会应该没啥问题",
+      "nextNodeIndex": -1,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 10,
+      "actorId": 5,
+      "dialogueText": "是你师傅要你来的吧",
+      "nextNodeIndex": 11,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 11,
+      "actorId": 5,
+      "dialogueText": "如果不用准备的话现在就可以去换",
+      "nextNodeIndex": 12,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    },
+    {
+      "nodeId": 12,
+      "actorId": 5,
+      "dialogueText": "粮仓就在那边，符在门上",
+      "nextNodeIndex": -1,
+      "isChoiceNode": false,
+      "animationTrigger": ""
+    }
+  ]
+}

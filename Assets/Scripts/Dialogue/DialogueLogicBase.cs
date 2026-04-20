@@ -16,18 +16,82 @@ public abstract class DialogueLogicBase : MonoBehaviour
     protected virtual void Awake()
     {
         if (dialogueObj == null)
-        {
-            dialogueObj = GetComponent<DialogueObj>();
-        }
+            dialogueObj = GetComponent<DialogueObj>() ?? GetComponentInChildren<DialogueObj>(true);
+
         if (string.IsNullOrEmpty(objectId))
-        {
             objectId = gameObject.name;
-        }
     }
     
     protected virtual void Start()
     {
         LoadState();
+    }
+
+    /// <summary>
+    /// 只绑定 <see cref="DialogueObj"/> 与 Resources 路径（可在子物体上），不添加碰撞体/RB。
+    /// 用于已在场景里摆好 Trigger + Tag 的 NPC（例如第二次对话），避免与自动补全冲突。
+    /// </summary>
+    protected void BindDialogueObjResource(string dialogueResourcePath)
+    {
+        if (string.IsNullOrEmpty(dialogueResourcePath))
+            return;
+
+        if (dialogueObj == null)
+            dialogueObj = GetComponent<DialogueObj>() ?? GetComponentInChildren<DialogueObj>(true);
+        if (dialogueObj == null)
+            dialogueObj = gameObject.AddComponent<DialogueObj>();
+        dialogueObj.EnsureSingleDialogue(dialogueResourcePath);
+    }
+
+    /// <summary>
+    /// 与渔夫 NPC 同款：补 <see cref="DialogueObj"/>、无碰撞体时在本物体加 Trigger + Kinematic Rigidbody2D。
+    /// 若 <b>子物体上已有</b> <see cref="Collider2D"/>，则不再添加，避免多出一个未打 Tag 的根碰撞体导致「进范围没反应」。
+    /// 请在 <see cref="Awake"/> 里、在 <c>base.Awake()</c> 之前调用（并先设好 <see cref="objectId"/>）。
+    /// </summary>
+    protected void EnsureLineNpcInteractSupport(string dialogueResourcePath)
+    {
+        BindDialogueObjResource(dialogueResourcePath);
+
+        if (HasCollider2DInSelfOrChildren())
+            return;
+
+        var box = gameObject.AddComponent<BoxCollider2D>();
+        box.isTrigger = true;
+        box.size = new Vector2(3f, 4f);
+
+        if (GetComponent<Rigidbody2D>() == null)
+        {
+            var rb = gameObject.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Kinematic;
+            rb.simulated = true;
+        }
+    }
+
+    private bool HasCollider2DInSelfOrChildren()
+    {
+        return GetComponent<Collider2D>() != null || GetComponentInChildren<Collider2D>(true) != null;
+    }
+
+    /// <summary>若未使用 <see cref="InteractableObject"/>，提示 Tag/Trigger 是否与孟婆、渔夫一致。</summary>
+    protected void WarnLineNpcInteractSetupIfIncomplete(string ownerScriptName)
+    {
+        bool hasProximity = GetComponent<InteractableObject>() != null
+            || GetComponentInChildren<InteractableObject>(true) != null;
+        if (hasProximity)
+            return;
+
+        if (!CompareTag("CanInteractWith"))
+        {
+            Debug.LogWarning(
+                $"[{ownerScriptName}] {gameObject.name}: 未检测到 InteractableObject。请把 Tag 设为 CanInteractWith（与孟婆/渔夫相同），否则可能无按 F 提示。",
+                this);
+        }
+
+        var col = GetComponent<Collider2D>() ?? GetComponentInChildren<Collider2D>(true);
+        if (col == null)
+            Debug.LogWarning($"[{ownerScriptName}] {gameObject.name}: 缺少 Collider2D，无法触发交互。", this);
+        else if (!col.isTrigger)
+            Debug.LogWarning($"[{ownerScriptName}] {gameObject.name}: Collider2D 应勾选 Is Trigger。", this);
     }
     
     protected virtual void LoadState()

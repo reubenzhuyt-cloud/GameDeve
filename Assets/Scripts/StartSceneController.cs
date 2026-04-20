@@ -7,6 +7,8 @@ public class StartSceneController : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private string nextSceneName = "MengPoQIao";
     [SerializeField] private float fadeOutDuration = 1f;
+    [SerializeField] private string loadTipText = "正在进入游戏";
+    [SerializeField] private float loadTipDuration = 1f;
     
     [Header("UI References")]
     [SerializeField] private GameObject clickPromptText;
@@ -54,6 +56,9 @@ public class StartSceneController : MonoBehaviour
     void StartGame()
     {
         isTransitioning = true;
+
+        if (!string.IsNullOrEmpty(loadTipText) && loadTipDuration > 0f)
+            UIManager.ShowTip(loadTipText, loadTipDuration);
         
         if (clickPromptText != null)
         {

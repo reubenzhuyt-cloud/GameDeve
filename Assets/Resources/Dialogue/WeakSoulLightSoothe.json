@@ -1,0 +1,21 @@
+{
+    "DialogueName": "光芒安抚",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 2,
+            "dialogueText": "……这道光……好温暖……我已经很久……没有感到这么安宁了……谢谢你……",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "虚弱游魂在你的光芒中得到了安抚，躁动渐渐平息。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

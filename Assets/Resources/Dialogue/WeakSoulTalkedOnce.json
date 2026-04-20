@@ -1,0 +1,29 @@
+{
+    "DialogueName": "虚弱游魂-再会",
+    "nodes": [
+        {
+            "nodeId": 0,
+            "actorId": 2,
+            "dialogueText": "……又是你。你的气息……和上次一样……让人安心。",
+            "nextNodeIndex": 1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 1,
+            "actorId": 0,
+            "dialogueText": "你还好吗？",
+            "nextNodeIndex": 2,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        },
+        {
+            "nodeId": 2,
+            "actorId": 2,
+            "dialogueText": "……嗯。比起漫无目的地飘着……能再听见活人的声音……已经很好了。",
+            "nextNodeIndex": -1,
+            "isChoiceNode": false,
+            "animationTrigger": ""
+        }
+    ]
+}

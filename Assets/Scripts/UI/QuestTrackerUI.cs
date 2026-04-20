@@ -84,19 +84,19 @@ public class QuestTrackerUI : MonoBehaviour
         if (questNameText != null)
         {
             questNameText.overflowMode = TextOverflowModes.Ellipsis;
-            questNameText.enableWordWrapping = false;
+            questNameText.textWrappingMode = TextWrappingModes.NoWrap;
         }
-        
+
         if (objectiveText != null)
         {
             objectiveText.overflowMode = TextOverflowModes.Ellipsis;
-            objectiveText.enableWordWrapping = false;
+            objectiveText.textWrappingMode = TextWrappingModes.NoWrap;
         }
-        
+
         if (questTypeText != null)
         {
             questTypeText.overflowMode = TextOverflowModes.Ellipsis;
-            questTypeText.enableWordWrapping = false;
+            questTypeText.textWrappingMode = TextWrappingModes.NoWrap;
         }
     }
     
@@ -212,12 +212,7 @@ public class QuestTrackerUI : MonoBehaviour
             }
             
             UpdateTrackerTexts();
-            
-            if (trackerPanel != null)
-            {
-                trackerPanel.SetActive(true);
-                Debug.Log("[QuestTrackerUI] Tracker shown directly from OnQuestPanelClosed");
-            }
+            ShowTracker();
         }
     }
     
@@ -359,19 +354,18 @@ public class QuestTrackerUI : MonoBehaviour
             return;
         }
         
-        if (trackerPanel != null)
-        {
+        if (UIManager.instance != null && UIManager.instance.IsPanelRegistered(UIType.QuestTracker))
+            UIManager.instance.Show(UIType.QuestTracker, true);
+        else if (trackerPanel != null)
             trackerPanel.SetActive(true);
-            Debug.Log("[QuestTrackerUI] Tracker shown");
-        }
     }
     
     public void HideTracker()
     {
-        if (trackerPanel != null)
-        {
+        if (UIManager.instance != null && UIManager.instance.IsPanelRegistered(UIType.QuestTracker))
+            UIManager.instance.Hide(UIType.QuestTracker, true);
+        else if (trackerPanel != null)
             trackerPanel.SetActive(false);
-        }
     }
     
     public void RefreshTracker()

@@ -1,0 +1,3 @@
+# 语音批量生成（Tools/generate_tts.py）：千问声音设计 + VD 合成
+dashscope>=1.24.6
+python-dotenv>=1.0.0

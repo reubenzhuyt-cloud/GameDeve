@@ -1,0 +1,26 @@
+[
+  {
+    "character": "MengPo",
+    "filename": "孟婆台词1.wav",
+    "text": "一时心软，谁料魂珠失窃，地府大乱。",
+    "label": "孟婆台词1"
+  },
+  {
+    "character": "MengPo",
+    "filename": "孟婆台词2.wav",
+    "text": "这寻珠的路，便托付于你了。",
+    "label": "孟婆台词2"
+  },
+  {
+    "character": "MengWang",
+    "filename": "孟忘台词1.wav",
+    "text": "我名孟忘。必寻回那窃走魂珠之鬼。",
+    "label": "孟忘台词1"
+  },
+  {
+    "character": "MengWang",
+    "filename": "孟忘台词2.wav",
+    "text": "我渡的不是亡魂，是人间未平的遗憾。",
+    "label": "孟忘台词2"
+  }
+]

@@ -29,6 +29,8 @@ public class GameInitializer : MonoBehaviour
     private void Start()
     {
         EnsureQuestManager();
+        if (GameManager.instance != null)
+            GameManager.instance.PrepareUI();
         StartInitialQuests();
     }
     
